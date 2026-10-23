@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <!-- Meta tags Mobile-First & PWA Obrigatórias -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Delícias do GO">
+    <meta name="theme-color" content="#78350F">
+
+    <!-- ÍCONE DO APLICATIVO PARA A TELA INICIAL (iOS & Android) -->
+    <link rel="apple-touch-icon" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=">
+    <link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=">
+    
+    <title>Calculadora de Custos & Precificação — Delícias do GO</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FEF8EE;
+            color: #4A2810;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bg-cream-100 { background-color: #FEF8EE; }
+        .bg-cream-200 { background-color: #FEF3C7; }
+        .bg-ocre { background-color: #D97706; }
+        .text-ocre { color: #D97706; }
+        .border-ocre { border-color: #D97706; }
+        .bg-cafe { background-color: #78350F; }
+        .text-cafe { color: #78350F; }
+        .active-tab {
+            background-color: #D97706 !important;
+            color: #FFFFFF !important;
+            font-weight: 700;
+        }
+        input, select, button {
+            touch-action: manipulation;
+        }
+        ::-webkit-scrollbar {
+            height: 4px;
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D97706;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-16">
+
+    <!-- HEADER / BARRA SUPERIOR -->
+    <header class="bg-cafe text-amber-100 shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-amber-600 rounded-xl text-white shadow">
+                    <i data-lucide="chef-hat" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white leading-tight">Delícias do GO</h1>
+                    <p class="text-[11px] text-amber-200 font-medium">Gestão Gastronômica & Precificação</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs bg-amber-950/60 px-3 py-1.5 rounded-full border border-amber-800">
+                <i data-lucide="hard-drive-download" class="w-4 h-4 text-emerald-400"></i>
+                <span>Sincronização em Nuvem Ativa</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVEGAÇÃO POR ABAS -->
+    <nav class="bg-amber-100/90 backdrop-blur border-b border-amber-200 sticky top-[65px] sm:top-[73px] z-40 overflow-x-auto shadow-sm">
+        <div class="max-w-7xl mx-auto px-2 flex whitespace-nowrap gap-1.5 py-2.5" id="navTabs">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active-tab flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-sm">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard & Backup
+            </button>
+            <button onclick="switchTab('insumos')" id="tab-insumos" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                <i data-lucide="package" class="w-4 h-4"></i> Insumos
+            </button>
+            <button onclick="switchTab('receitas')" id="tab-receitas" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                <i data-lucide="utensils-crossed" class="w-4 h-4"></i> Ficha Técnica
+            </button>
+            <button onclick="switchTab('custosFixos')" id="tab-custosFixos" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                <i data-lucide="calculator" class="w-4 h-4"></i> Custos Fixos
+            </button>
+            <button onclick="switchTab('precificacao')" id="tab-precificacao" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i> Precificação
+            </button>
+            <button onclick="switchTab('frete')" id="tab-frete" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                <i data-lucide="truck" class="w-4 h-4"></i> Frete & Subsídio
+            </button>
+        </div>
+    </nav>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-3 sm:px-4 py-5 space-y-5">
+
+        <!-- ==================== DASHBOARD & BACKUP ==================== -->
+        <section id="sec-dashboard" class="tab-content space-y-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-amber-200 shadow-sm">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-amber-950">Visão Geral do Negócio</h2>
+                    <p class="text-xs sm:text-sm text-amber-800">Métricas financeiras e ferramentas de segurança.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <button onclick="exportarBackupJSON()" class="flex-1 sm:flex-none bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center justify-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Exportar
+                    </button>
+                    <button onclick="document.getElementById('importFile').click()" class="flex-1 sm:flex-none bg-ocre hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center justify-center gap-2">
+                        <i data-lucide="upload" class="w-4 h-4"></i> Importar (JSON)
+                    </button>
+                    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importarBackupJSON(event)">
+                </div>
+            </div>
+
+            <!-- CARDS DE DESTAQUE -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm border border-amber-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-amber-800">Maior Margem (%)</p>
+                            <h3 id="dash-maior-margem-nome" class="text-base sm:text-lg font-extrabold text-amber-950 mt-1">--</h3>
+                        </div>
+                        <span class="p-2 bg-emerald-100 text-emerald-700 rounded-xl"><i data-lucide="trending-up" class="w-5 h-5"></i></span>
+                    </div>
+                    <p id="dash-maior-margem-val" class="text-xl sm:text-2xl font-black text-emerald-600 mt-3">0.0%</p>
+                </div>
+
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border-l-4 border-amber-500 shadow-sm border border-amber-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-amber-800">Mais Econômico (Menor CMV)</p>
+                            <h3 id="dash-menor-custo-nome" class="text-base sm:text-lg font-extrabold text-amber-950 mt-1">--</h3>
+                        </div>
+                        <span class="p-2 bg-amber-100 text-amber-700 rounded-xl"><i data-lucide="piggy-bank" class="w-5 h-5"></i></span>
+                    </div>
+                    <p id="dash-menor-custo-val" class="text-xl sm:text-2xl font-black text-amber-700 mt-3">R$ 0,00</p>
+                </div>
+
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border-l-4 border-cafe shadow-sm border border-amber-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-amber-800">Ponto de Equilíbrio</p>
+                            <h3 class="text-[11px] text-amber-600 font-medium">Cobertura de Custos Fixos</h3>
+                        </div>
+                        <span class="p-2 bg-amber-100 text-cafe rounded-xl"><i data-lucide="scale" class="w-5 h-5"></i></span>
+                    </div>
+                    <p id="dash-ponto-equilibrio" class="text-xl sm:text-2xl font-black text-cafe mt-3">R$ 0,00</p>
+                    <p id="dash-ponto-equilibrio-un" class="text-[11px] text-amber-700 mt-1 font-semibold">Equivalente a 0 unidades/mês</p>
+                </div>
+            </div>
+
+            <!-- RESUMO DE CADASTROS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm">
+                    <h3 class="font-bold text-amber-950 flex items-center gap-2 mb-3 text-sm sm:text-base">
+                        <i data-lucide="boxes" class="w-4 h-4 text-amber-600"></i> Resumo de Insumos & Matéria-Prima
+                    </h3>
+                    <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
+                        <span class="text-amber-800">Total de Insumos Cadastrados</span>
+                        <span id="dash-total-insumos" class="font-bold text-amber-950">0</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
+                        <span class="text-amber-800">Categorias Ativas</span>
+                        <span id="dash-categorias-ativas" class="font-bold text-amber-950">0</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm">
+                    <h3 class="font-bold text-amber-950 flex items-center gap-2 mb-3 text-sm sm:text-base">
+                        <i data-lucide="scroll-text" class="w-4 h-4 text-amber-600"></i> Resumo do Cardápio
+                    </h3>
+                    <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
+                        <span class="text-amber-800">Fichas Técnicas Salvas</span>
+                        <span id="dash-total-receitas" class="font-bold text-amber-950">0</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
+                        <span class="text-amber-800">Custos Fixos Totais</span>
+                        <span id="dash-total-custos-fixos" class="font-bold text-amber-950">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== CADASTRO DE INSUMOS ==================== -->
+        <section id="sec-insumos" class="tab-content hidden space-y-5">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-amber-600"></i> Cadastrar Insumos & Embalagens
+                </h2>
+                <form id="formInsumo" onsubmit="salvarInsumo(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
+                    <div class="sm:col-span-2 lg:col-span-2">
+                        <label class="block text-xs font-bold text-amber-900 mb-1">Nome do Insumo</label>
+                        <input type="text" id="insumoNome" required placeholder="Ex: Farinha, Calabresa..." class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">Categoria</label>
+                        <select id="insumoCategoria" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                            <option value="Farinhas">Farinhas & Secos</option>
+                            <option value="Laticínios">Laticínios & Frios</option>
+                            <option value="Recheios">Recheios & Carnes</option>
+                            <option value="Embalagens">Embalagens & Etiquetas</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">Preço Pago (R$)</label>
+                        <input type="number" step="0.01" id="insumoPreco" required placeholder="0,00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">Qtd. Comprada</label>
+                        <div class="flex gap-1">
+                            <input type="number" step="0.01" id="insumoQtd" required placeholder="1000" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                            <select id="insumoUnidade" class="px-2 py-2.5 border border-amber-300 rounded-xl bg-amber-100 text-xs font-bold">
+                                <option value="g">g</option>
+                                <option value="kg">kg</option>
+                                <option value="ml">ml</option>
+                                <option value="L">L</option>
+                                <option value="un">un</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">Fator Perda (%)</label>
+                        <input type="number" step="0.1" id="insumoPerda" value="0" placeholder="0" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-6 flex justify-end mt-2">
+                        <button type="submit" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> Salvar Insumo
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TABELA DE INSUMOS -->
+            <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                <div class="p-4 bg-amber-50 border-b border-amber-200">
+                    <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                        <i data-lucide="list" class="w-4 h-4 text-amber-600"></i> Insumos Cadastrados
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                <th class="p-3">Nome</th>
+                                <th class="p-3">Categoria</th>
+                                <th class="p-3">Preço Pago</th>
+                                <th class="p-3">Qtd. Original</th>
+                                <th class="p-3">Perda</th>
+                                <th class="p-3">Custo Efetivo Base</th>
+                                <th class="p-3 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaInsumos" class="divide-y divide-amber-100">
+                            <!-- Inserido dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== FICHA TÉCNICA ==================== -->
+        <section id="sec-receitas" class="tab-content hidden space-y-5">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                    <i data-lucide="utensils" class="w-5 h-5 text-amber-600"></i> Ficha Técnica (Massa + Recheio)
+                </h2>
+
+                <form id="formReceita" onsubmit="salvarReceita(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Nome do Produto / Pão</label>
+                            <input type="text" id="recNome" required placeholder="Ex: Pão de Calabresa Artesanal" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Rendimento Final (Pães)</label>
+                            <input type="number" min="1" id="recRendimento" value="10" required class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50/60 p-3.5 sm:p-4 rounded-xl border border-amber-200 space-y-3">
+                        <h4 class="font-bold text-amber-900 text-xs uppercase tracking-wider">Ingredientes da Receita</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                            <div class="sm:col-span-7">
+                                <select id="recSelectInsumo" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-white">
+                                    <!-- Populado dinamicamente -->
+                                </select>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <input type="number" step="0.01" id="recQtdInsumo" placeholder="Qtd (g, ml, un)" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-white">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <button type="button" onclick="addInsumoReceita()" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-2.5 rounded-xl text-sm shadow">
+                                    Adicionar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto mt-2">
+                            <table class="w-full text-xs text-left bg-white rounded-xl overflow-hidden border border-amber-200 whitespace-nowrap">
+                                <thead class="bg-amber-100 text-amber-900">
+                                    <tr>
+                                        <th class="p-2.5">Ingrediente</th>
+                                        <th class="p-2.5">Qtd Utilizada</th>
+                                        <th class="p-2.5">Custo Proporcional</th>
+                                        <th class="p-2.5 text-center">Remover</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recListaInsumosTemp">
+                                    <!-- Inserido dinamicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/30 p-3.5 rounded-xl border border-amber-200">
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Custo Embalagem / Un (R$)</label>
+                            <input type="number" step="0.01" id="recEmbalagemUn" value="0.00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Custo Etiqueta / Un (R$)</label>
+                            <input type="number" step="0.01" id="recEtiquetaUn" value="0.00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-white">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                            <i data-lucide="check" class="w-4 h-4"></i> Salvar Ficha Técnica
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                <div class="p-4 bg-amber-50 border-b border-amber-200">
+                    <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                        <i data-lucide="book-open" class="w-4 h-4 text-amber-600"></i> Fichas Técnicas Salvas
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                <th class="p-3">Produto</th>
+                                <th class="p-3">Rendimento</th>
+                                <th class="p-3">Custo Total (Fornada)</th>
+                                <th class="p-3">CMV Unitário</th>
+                                <th class="p-3 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaReceitas" class="divide-y divide-amber-100">
+                            <!-- Inserido dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== CUSTOS FIXOS ==================== -->
+        <section id="sec-custosFixos" class="tab-content hidden space-y-5">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm space-y-4">
+                    <h2 class="text-lg sm:text-xl font-bold text-amber-950 flex items-center gap-2">
+                        <i data-lucide="building" class="w-5 h-5 text-amber-600"></i> Custos Fixos & Mão de Obra
+                    </h2>
+                    <form id="formCustosFixos" onsubmit="salvarCustosFixos(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Gás (R$/mês)</label>
+                            <input type="number" step="0.01" id="cfGas" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Energia Elétrica (R$/mês)</label>
+                            <input type="number" step="0.01" id="cfEnergia" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">MEI / Impostos (R$/mês)</label>
+                            <input type="number" step="0.01" id="cfMei" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Pró-Labore (R$/mês)</label>
+                            <input type="number" step="0.01" id="cfProLabore" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Outros Gastos Fixos</label>
+                            <input type="number" step="0.01" id="cfOutros" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div class="sm:col-span-2 flex justify-end">
+                            <button type="submit" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> Salvar Custos Fixos
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-amber-950 mb-4 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="pie-chart" class="w-5 h-5 text-amber-600"></i> Rateio para Precificação
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-amber-900 mb-1">Taxa de Rateio Aplicada (%)</label>
+                                <input type="number" step="0.1" id="cfTaxaRateio" value="15" onchange="salvarCustosFixos(event)" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold text-amber-950 bg-amber-50/30">
+                            </div>
+                            <div class="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-amber-800">Custo Fixo Total:</span>
+                                    <span id="cfTotalMensalVal" class="font-bold text-amber-950">R$ 0,00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PRECIFICAÇÃO ==================== -->
+        <section id="sec-precificacao" class="tab-content hidden space-y-5">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-5 h-5 text-amber-600"></i> Parâmetros Globais de Precificação
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">Margem de Lucro Desejada (%)</label>
+                        <input type="number" id="precMargemDesejada" value="30" oninput="renderPrecificacao()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold text-amber-950 bg-amber-50/30">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">Taxa de Cartão / Plataforma (%)</label>
+                        <input type="number" step="0.1" id="precTaxaCartao" value="5.0" oninput="renderPrecificacao()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold text-amber-950 bg-amber-50/30">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                <div class="p-4 bg-amber-50 border-b border-amber-200">
+                    <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                        <i data-lucide="tags" class="w-4 h-4 text-amber-600"></i> Sugestão de Preço de Venda
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                <th class="p-3">Produto</th>
+                                <th class="p-3">CMV Direto</th>
+                                <th class="p-3">Custo Fixo Agregado</th>
+                                <th class="p-3">Custo Total</th>
+                                <th class="p-3">Preço Sugerido</th>
+                                <th class="p-3">Lucro Líquido</th>
+                                <th class="p-3">Margem Líquida</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaPrecificacao" class="divide-y divide-amber-100">
+                            <!-- Inserido dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== GESTÃO DE FRETE ==================== -->
+        <section id="sec-frete" class="tab-content hidden space-y-5">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="p-2.5 bg-amber-100 text-amber-800 rounded-xl">
+                        <i data-lucide="navigation" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-amber-950">Simulador de Frete & Subsídio</h2>
+                        <p class="text-xs text-amber-800">Análise de viabilidade logística e travas de segurança</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-4">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">Valor do Carrinho (R$)</label>
+                        <input type="number" step="0.01" id="freteValorCarrinho" placeholder="Ex: 120,00" oninput="calcularFreteEstrategico()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">CMV do Carrinho (R$)</label>
+                        <input type="number" step="0.01" id="freteCustoCarrinho" placeholder="Ex: 45,00" oninput="calcularFreteEstrategico()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">Custo Real do Motoboy (R$)</label>
+                        <input type="number" step="0.01" id="freteCustoMotoboy" placeholder="Ex: 28,00" oninput="calcularFreteEstrategico()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                    </div>
+                </div>
+            </div>
+
+            <div id="freteResultadoCard" class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm hidden space-y-5">
+                <div id="freteSemaforoBox" class="p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border">
+                    <div class="flex items-center gap-3">
+                        <div id="freteSemaforoIcon" class="p-3 rounded-xl text-white">
+                            <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span id="freteSemaforoBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md">--</span>
+                            <h3 id="freteSemaforoTitulo" class="text-base sm:text-lg font-bold mt-1">--</h3>
+                            <p id="freteSemaforoDesc" class="text-xs mt-0.5">--</p>
+                        </div>
+                    </div>
+                    <div class="text-left sm:text-right w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0 border-amber-200">
+                        <p class="text-xs font-bold text-gray-500 uppercase">Margem Final</p>
+                        <p id="freteMargemFinalVal" class="text-2xl sm:text-3xl font-black">0.0%</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                        <h4 class="font-bold text-xs text-amber-900 uppercase tracking-wider mb-2">Recomendação de Subsídio</h4>
+                        <div class="space-y-1.5 text-xs sm:text-sm">
+                            <div class="flex justify-between">
+                                <span>Desconto Sugerido:</span>
+                                <span id="freteDescontoRecomendado" class="font-extrabold text-amber-950">R$ 0,00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Frete Cliente:</span>
+                                <span id="fretePagoPeloCliente" class="font-extrabold text-amber-950">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                        <h4 class="font-bold text-xs text-amber-900 uppercase tracking-wider mb-2">Demonstrativo do Pedido</h4>
+                        <div class="space-y-1.5 text-xs sm:text-sm">
+                            <div class="flex justify-between">
+                                <span>Lucro Líquido:</span>
+                                <span id="freteLucroLiquidoReais" class="font-extrabold text-emerald-700">R$ 0,00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Trava de Segurança (20%):</span>
+                                <span id="freteStatusTrava" class="font-bold">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="freteUpsellBox" class="p-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl shadow-md hidden flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="sparkles" class="w-6 h-6 text-amber-200 shrink-0"></i>
+                        <div>
+                            <h4 class="font-bold text-xs sm:text-sm">Sugestão de Upsell</h4>
+                            <p id="freteUpsellTexto" class="text-xs text-amber-100">Adicione mais produtos para liberar frete subsidiado com segurança!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FIREBASE SDK & LÓGICA DE SINCRONIZAÇÃO EM TEMPO REAL -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBimS3lVLHas9TZt6do6-Icg7NWzfG0BSE",
+          authDomain: "deliciasdogo.firebaseapp.com",
+          projectId: "deliciasdogo",
+          storageBucket: "deliciasdogo.firebasestorage.app",
+          messagingSenderId: "131089324897",
+          appId: "1:131089324897:web:71a443a5c2c2d36efd4320"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let appData = {
+            insumos: [],
+            receitas: [],
+            custosFixos: { gas: 0, energia: 0, mei: 0, proLabore: 0, outros: 0, taxaRateio: 15 },
+            precificacao: { margemDesejada: 30, taxaCartao: 5.0 }
+        };
+
+        let tempInsumosReceita = [];
+
+        window.onload = async function() {
+            await carregarDaNuvem();
+            renderInsumos();
+            renderReceitas();
+            renderCustosFixos();
+            renderPrecificacao();
+            renderDashboard();
+            lucide.createIcons();
+        };
+
+        async function carregarDaNuvem() {
+            try {
+                const docRef = doc(db, "dados", "delicias_go");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    appData = docSnap.data();
+                } else {
+                    const savedLocal = localStorage.getItem('delicias_go_data');
+                    if (savedLocal) {
+                        appData = JSON.parse(savedLocal);
+                        await salvarNaNuvem();
+                    }
+                }
+            } catch(e) {
+                console.error("Erro ao carregar da nuvem, usando LocalStorage", e);
+                const saved = localStorage.getItem('delicias_go_data');
+                if (saved) appData = JSON.parse(saved);
+            }
+        }
+
+        async function salvarNaNuvem() {
+            try {
+                localStorage.setItem('delicias_go_data', JSON.stringify(appData));
+                await setDoc(doc(db, "dados", "delicias_go"), appData);
+                renderDashboard();
+            } catch(e) {
+                console.error("Erro ao salvar na nuvem", e);
+            }
+        }
+
+        window.exportarBackupJSON = function() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "delicias_do_go_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        window.importarBackupJSON = function(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = async function(e) {
+                    try {
+                        const parsedData = JSON.parse(e.target.result);
+                        if(parsedData && parsedData.insumos && parsedData.receitas) {
+                            appData = parsedData;
+                            await salvarNaNuvem();
+                            renderInsumos();
+                            renderReceitas();
+                            renderCustosFixos();
+                            renderPrecificacao();
+                            renderDashboard();
+                            alert("Dados importados e sincronizados com sucesso!");
+                        } else {
+                            alert("Arquivo em formato inválido.");
+                        }
+                    } catch (error) {
+                        alert("Erro ao ler o arquivo JSON.");
+                    }
+                };
+            }
+        }
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
+            
+            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.add('active-tab');
+
+            if(tabId === 'dashboard') renderDashboard();
+            if(tabId === 'precificacao') renderPrecificacao();
+        }
+
+        // ==================== INSUMOS ====================
+        window.salvarInsumo = async function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('insumoNome').value.trim();
+            const categoria = document.getElementById('insumoCategoria').value;
+            const preco = parseFloat(document.getElementById('insumoPreco').value) || 0;
+            const qtd = parseFloat(document.getElementById('insumoQtd').value) || 1;
+            const unidade = document.getElementById('insumoUnidade').value;
+            const perda = parseFloat(document.getElementById('insumoPerda').value) || 0;
+
+            let qtdEfetiva = qtd * (1 - (perda / 100));
+            let custoUnitarioBase = preco / (qtdEfetiva > 0 ? qtdEfetiva : 1);
+
+            const novoInsumo = { id: Date.now(), nome, categoria, preco, qtd, unidade, perda, custoUnitarioBase };
+
+            appData.insumos.push(novoInsumo);
+            await salvarNaNuvem();
+            renderInsumos();
+            document.getElementById('formInsumo').reset();
+        }
+
+        window.deletarInsumo = async function(id) {
+            appData.insumos = appData.insumos.filter(i => i.id !== id);
+            await salvarNaNuvem();
+            renderInsumos();
+        }
+
+        function renderInsumos() {
+            const tbody = document.getElementById('tabelaInsumos');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            appData.insumos.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${item.nome}</td>
+                    <td class="p-3"><span class="bg-amber-100 text-amber-800 text-[11px] px-2 py-1 rounded-md font-medium">${item.categoria}</span></td>
+                    <td class="p-3">R$ ${item.preco.toFixed(2)}</td>
+                    <td class="p-3">${item.qtd} ${item.unidade}</td>
+                    <td class="p-3">${item.perda}%</td>
+                    <td class="p-3 font-bold text-amber-900">R$ ${item.custoUnitarioBase.toFixed(4)} / ${item.unidade}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deletarInsumo(${item.id})" class="text-rose-600 hover:text-rose-800 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const selectInsumo = document.getElementById('recSelectInsumo');
+            if (selectInsumo) {
+                selectInsumo.innerHTML = appData.insumos.length === 0 
+                    ? '<option value="">Nenhum insumo cadastrado</option>' 
+                    : appData.insumos.map(i => `<option value="${i.id}">${i.nome} (${i.categoria}) - R$ ${i.custoUnitarioBase.toFixed(4)}/${i.unidade}</option>`).join('');
+            }
+            lucide.createIcons();
+        }
+
+        // ==================== FICHA TÉCNICA ====================
+        window.addInsumoReceita = function() {
+            const select = document.getElementById('recSelectInsumo');
+            const insumoId = parseInt(select.value);
+            const qtd = parseFloat(document.getElementById('recQtdInsumo').value) || 0;
+
+            if(!insumoId || qtd <= 0) return;
+
+            const insumoObj = appData.insumos.find(i => i.id === insumoId);
+            if(!insumoObj) return;
+
+            const custoTotalItem = insumoObj.custoUnitarioBase * qtd;
+
+            tempInsumosReceita.push({ insumoId, nome: insumoObj.nome, categoria: insumoObj.categoria, qtd, unidade: insumoObj.unidade, custoTotal: custoTotalItem });
+            document.getElementById('recQtdInsumo').value = '';
+            renderListaInsumosTemp();
+        }
+
+        window.removerInsumoTemp = function(index) {
+            tempInsumosReceita.splice(index, 1);
+            renderListaInsumosTemp();
+        }
+
+        function renderListaInsumosTemp() {
+            const tbody = document.getElementById('recListaInsumosTemp');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            tempInsumosReceita.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2.5 font-medium">${item.nome} <span class="text-[11px] text-amber-700">(${item.categoria})</span></td>
+                    <td class="p-2.5">${item.qtd} ${item.unidade}</td>
+                    <td class="p-2.5 font-bold">R$ ${item.custoTotal.toFixed(2)}</td>
+                    <td class="p-2.5 text-center"><button onclick="removerInsumoTemp(${index})" class="text-rose-600 font-bold p-1">✕</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.salvarReceita = async function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('recNome').value.trim();
+            const rendimento = parseInt(document.getElementById('recRendimento').value) || 1;
+            const embalagemUn = parseFloat(document.getElementById('recEmbalagemUn').value) || 0;
+            const etiquetaUn = parseFloat(document.getElementById('recEtiquetaUn').value) || 0;
+
+            if(tempInsumosReceita.length === 0) {
+                alert("Adicione pelo menos um ingrediente à ficha técnica!");
+                return;
+            }
+
+            const custoInsumosTotais = tempInsumosReceita.reduce((acc, i) => acc + i.custoTotal, 0);
+            const custoInsumosUnitario = custoInsumosTotais / (rendimento > 0 ? rendimento : 1);
+            const cmvUnitario = custoInsumosUnitario + embalagemUn + etiquetaUn;
+
+            const novaReceita = { id: Date.now(), nome, rendimento, insumos: [...tempInsumosReceita], embalagemUn, etiquetaUn, custoInsumosTotais, cmvUnitario };
+
+            appData.receitas.push(novaReceita);
+            tempInsumosReceita = [];
+            await salvarNaNuvem();
+            renderReceitas();
+            document.getElementById('formReceita').reset();
+            renderListaInsumosTemp();
+        }
+
+        window.deletarReceita = async function(id) {
+            appData.receitas = appData.receitas.filter(r => r.id !== id);
+            await salvarNaNuvem();
+            renderReceitas();
+        }
+
+        function renderReceitas() {
+            const tbody = document.getElementById('tabelaReceitas');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            appData.receitas.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${r.nome}</td>
+                    <td class="p-3">${r.rendimento} un</td>
+                    <td class="p-3 font-bold text-amber-900">R$ ${r.custoInsumosTotais.toFixed(2)}</td>
+                    <td class="p-3 font-black text-amber-950 bg-amber-100/40">R$ ${r.cmvUnitario.toFixed(2)} / un</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deletarReceita(${r.id})" class="text-rose-600 hover:text-rose-800 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        // ==================== CUSTOS FIXOS ====================
+        window.salvarCustosFixos = async function(e) {
+            if(e) e.preventDefault();
+            appData.custosFixos = {
+                gas: parseFloat(document.getElementById('cfGas').value) || 0,
+                energia: parseFloat(document.getElementById('cfEnergia').value) || 0,
+                mei: parseFloat(document.getElementById('cfMei').value) || 0,
+                proLabore: parseFloat(document.getElementById('cfProLabore').value) || 0,
+                outros: parseFloat(document.getElementById('cfOutros').value) || 0,
+                taxaRateio: parseFloat(document.getElementById('cfTaxaRateio').value) || 15
+            };
+            await salvarNaNuvem();
+            renderCustosFixos();
+        }
+
+        function renderCustosFixos() {
+            const cf = appData.custosFixos;
+            if(!document.getElementById('cfGas')) return;
+            document.getElementById('cfGas').value = cf.gas || '';
+            document.getElementById('cfEnergia').value = cf.energia || '';
+            document.getElementById('cfMei').value = cf.mei || '';
+            document.getElementById('cfProLabore').value = cf.proLabore || '';
+            document.getElementById('cfOutros').value = cf.outros || '';
+            document.getElementById('cfTaxaRateio').value = cf.taxaRateio || 15;
+
+            const total = cf.gas + cf.energia + cf.mei + cf.proLabore + cf.outros;
+            document.getElementById('cfTotalMensalVal').innerText = `R$ ${total.toFixed(2)}`;
+        }
+
+        // ==================== PRECIFICAÇÃO ====================
+        window.renderPrecificacao = function() {
+            const tbody = document.getElementById('tabelaPrecificacao');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            const margemDesejada = parseFloat(document.getElementById('precMargemDesejada').value) || 30;
+            const taxaCartao = parseFloat(document.getElementById('precTaxaCartao').value) || 5;
+            const taxaRateio = appData.custosFixos.taxaRateio || 15;
+
+            appData.precificacao.margemDesejada = margemDesejada;
+            appData.precificacao.taxaCartao = taxaCartao;
+
+            appData.receitas.forEach(r => {
+                const cmv = r.cmvUnitario;
+                const custoFixoAgregado = cmv * (taxaRateio / 100);
+                const custoTotalUnitario = cmv + custoFixoAgregado;
+
+                const percentualDeducoes = (margemDesejada + taxaCartao) / 100;
+                const divisor = percentualDeducoes < 1 ? (1 - percentualDeducoes) : 0.1;
+                const precoSugerido = custoTotalUnitario / divisor;
+
+                const taxaCartaoReais = precoSugerido * (taxaCartao / 100);
+                const lucroLiquidoReais = precoSugerido - custoTotalUnitario - taxaCartaoReais;
+                const margemLiquidaPct = (lucroLiquidoReais / precoSugerido) * 100;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${r.nome}</td>
+                    <td class="p-3">R$ ${cmv.toFixed(2)}</td>
+                    <td class="p-3">R$ ${custoFixoAgregado.toFixed(2)}</td>
+                    <td class="p-3 font-bold">R$ ${custoTotalUnitario.toFixed(2)}</td>
+                    <td class="p-3 font-black text-amber-900 bg-amber-100/40">R$ ${precoSugerido.toFixed(2)}</td>
+                    <td class="p-3 text-emerald-700 font-bold">R$ ${lucroLiquidoReais.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">${margemLiquidaPct.toFixed(1)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==================== DASHBOARD ====================
+        function renderDashboard() {
+            document.getElementById('dash-total-insumos').innerText = appData.insumos.length;
+            const categoriasUnicas = new Set(appData.insumos.map(i => i.categoria));
+            document.getElementById('dash-categorias-ativas').innerText = categoriasUnicas.size;
+            document.getElementById('dash-total-receitas').innerText = appData.receitas.length;
+
+            const cf = appData.custosFixos;
+            const custoFixoTotal = cf.gas + cf.energia + cf.mei + cf.proLabore + cf.outros;
+            document.getElementById('dash-total-custos-fixos').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+
+            if(appData.receitas.length === 0) {
+                document.getElementById('dash-maior-margem-nome').innerText = "Sem receitas";
+                document.getElementById('dash-menor-custo-nome').innerText = "Sem receitas";
+                document.getElementById('dash-ponto-equilibrio').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+                return;
+            }
+
+            let menorCustoRec = appData.receitas.reduce((prev, curr) => prev.cmvUnitario < curr.cmvUnitario ? prev : curr);
+            document.getElementById('dash-menor-custo-nome').innerText = menorCustoRec.nome;
+            document.getElementById('dash-menor-custo-val').innerText = `R$ ${menorCustoRec.cmvUnitario.toFixed(2)} / un`;
+
+            const margemDesejada = appData.precificacao.margemDesejada || 30;
+            document.getElementById('dash-maior-margem-nome').innerText = appData.receitas[0].nome;
+            document.getElementById('dash-maior-margem-val').innerText = `${margemDesejada.toFixed(1)}%`;
+
+            document.getElementById('dash-ponto-equilibrio').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+            const cmvMedio = appData.receitas.reduce((acc, r) => acc + r.cmvUnitario, 0) / appData.receitas.length;
+            const unidadesPe = cmvMedio > 0 ? Math.ceil(custoFixoTotal / (cmvMedio * 2)) : 0;
+            document.getElementById('dash-ponto-equilibrio-un').innerText = `Aprox. ${unidadesPe} unidades/mês`;
+        }
+
+        // ==================== GESTÃO DE FRETE ====================
+        window.calcularFreteEstrategico = function() {
+            const valorCarrinho = parseFloat(document.getElementById('freteValorCarrinho').value) || 0;
+            const cmvCarrinho = parseFloat(document.getElementById('freteCustoCarrinho').value) || 0;
+            const custoMotoboy = parseFloat(document.getElementById('freteCustoMotoboy').value) || 0;
+
+            const cardRes = document.getElementById('freteResultadoCard');
+            if(valorCarrinho <= 0) {
+                cardRes.classList.add('hidden');
+                return;
+            }
+            cardRes.classList.remove('hidden');
+
+            let descontoPermitido = 0;
+            let alertaRegra = "";
+
+            if (valorCarrinho < 70) {
+                descontoPermitido = 0;
+                alertaRegra = "Pedido abaixo do valor mínimo para subsídio (Mínimo R$ 70,00).";
+            } else if (valorCarrinho >= 70 && valorCarrinho <= 130) {
+                descontoPermitido = custoMotoboy * 0.50;
+                alertaRegra = "Qualificado para até 50% de subsídio de frete.";
+            } else {
+                descontoPermitido = Math.min(custoMotoboy, 15.00);
+                alertaRegra = "Alto valor qualificado para desconto especial de até R$ 15,00.";
+            }
+
+            let descontoEfetivo = descontoPermitido;
+            let lucroLiquido = valorCarrinho - cmvCarrinho - descontoEfetivo;
+            let margemFinal = (lucroLiquido / valorCarrinho) * 100;
+
+            let travaAtivada = false;
+            if (margemFinal < 20) {
+                const lucroMinimoRequerido = valorCarrinho * 0.20;
+                const descontoMaximoSeguro = valorCarrinho - cmvCarrinho - lucroMinimoRequerido;
+                
+                descontoEfetivo = Math.max(0, descontoMaximoSeguro);
+                lucroLiquido = valorCarrinho - cmvCarrinho - descontoEfetivo;
+                margemFinal = (lucroLiquido / valorCarrinho) * 100;
+                travaAtivada = true;
+            }
+
+            const fretePagoCliente = custoMotoboy - descontoEfetivo;
+
+            document.getElementById('freteDescontoRecomendado').innerText = `R$ ${descontoEfetivo.toFixed(2)}`;
+            document.getElementById('fretePagoPeloCliente').innerText = `R$ ${fretePagoCliente.toFixed(2)}`;
+            document.getElementById('freteLucroLiquidoReais').innerText = `R$ ${lucroLiquido.toFixed(2)}`;
+            document.getElementById('freteMargemFinalVal').innerText = `${margemFinal.toFixed(1)}%`;
+
+            document.getElementById('freteStatusTrava').innerText = travaAtivada 
+                ? "Ativada (Protegendo margem mín. 20%)" 
+                : "Aprovada (Margem segura)";
+            document.getElementById('freteStatusTrava').className = travaAtivada ? "font-bold text-amber-700 text-xs" : "font-bold text-emerald-700 text-xs";
+
+            const semaforoBox = document.getElementById('freteSemaforoBox');
+            const semaforoIcon = document.getElementById('freteSemaforoIcon');
+            const semaforoBadge = document.getElementById('freteSemaforoBadge');
+            const semaforoTitulo = document.getElementById('freteSemaforoTitulo');
+            const semaforoDesc = document.getElementById('freteSemaforoDesc');
+
+            if (margemFinal >= 25) {
+                semaforoBox.className = "p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border bg-emerald-50 border-emerald-300 text-emerald-950";
+                semaforoIcon.className = "p-3 rounded-xl text-white bg-emerald-600";
+                semaforoBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900";
+                semaforoBadge.innerText = "Verde";
+                semaforoTitulo.innerText = "Altamente Lucrativo";
+                semaforoDesc.innerText = alertaRegra;
+            } else if (margemFinal >= 20 && margemFinal < 25) {
+                semaforoBox.className = "p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border bg-amber-50 border-amber-300 text-amber-950";
+                semaforoIcon.className = "p-3 rounded-xl text-white bg-amber-500";
+                semaforoBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-200 text-amber-900";
+                semaforoBadge.innerText = "Amarelo";
+                semaforoTitulo.innerText = "Margem Aceitável";
+                semaforoDesc.innerText = alertaRegra;
+            } else {
+                semaforoBox.className = "p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border bg-rose-50 border-rose-300 text-rose-950";
+                semaforoIcon.className = "p-3 rounded-xl text-white bg-rose-600";
+                semaforoBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-rose-200 text-rose-900";
+                semaforoBadge.innerText = "Vermelho";
+                semaforoTitulo.innerText = "Inviável / Prejuízo";
+                semaforoDesc.innerText = "Abaixo da trava de segurança. Subsídio bloqueado.";
+            }
+
+            const upsellBox = document.getElementById('freteUpsellBox');
+            const upsellTexto = document.getElementById('freteUpsellTexto');
+
+            if (margemFinal < 25) {
+                let valorAlvo = 130.01;
+                if(valorCarrinho < 70) valorAlvo = 70.00;
+                
+                const valorFaltante = Math.max(0, valorAlvo - valorCarrinho);
+
+                if (valorFaltante > 0) {
+                    upsellTexto.innerText = `Adicione mais R$ ${valorFaltante.toFixed(2)} em produtos para liberar o desconto máximo com segurança!`;
+                    upsellBox.classList.remove('hidden');
+                } else {
+                    upsellBox.classList.add('hidden');
+                }
+            } else {
+                upsellBox.classList.add('hidden');
+            }
+
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
