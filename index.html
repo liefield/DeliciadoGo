@@ -1,3 +1,6 @@
+Aqui está o código completo e atualizado do seu index.html.
+Adicionei a nova aba "Estoque Pronto" (com botão na navegação, formulário de lançamento selecionando os produtos cadastrados nas Fichas Técnicas, cálculo automático do valor total, tabela interativa com opções de edição rápida e exclusão, além de integração total com o Firebase e LocalStorage).
+Substitua todo o conteúdo do seu arquivo index.html por este:
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -168,6 +171,9 @@
                 </button>
                 <button onclick="switchTab('receitas')" id="tab-receitas" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
                     <i data-lucide="utensils-crossed" class="w-4 h-4"></i> Ficha Técnica
+                </button>
+                <button onclick="switchTab('estoquePronto')" id="tab-estoquePronto" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="boxes" class="w-4 h-4"></i> Estoque Pronto
                 </button>
                 <button onclick="switchTab('custosFixos')" id="tab-custosFixos" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
                     <i data-lucide="calculator" class="w-4 h-4"></i> Custos Fixos
@@ -447,6 +453,61 @@
                 </div>
             </section>
 
+            <!-- ==================== ESTOQUE PRONTO PARA VENDA ==================== -->
+            <section id="sec-estoquePronto" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                        <i data-lucide="package-plus" class="w-5 h-5 text-amber-600"></i> Lançar Produto Pronto no Estoque
+                    </h2>
+                    <form id="formEstoquePronto" onsubmit="salvarEstoquePronto(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-end">
+                        <input type="hidden" id="estoqueIdEditando">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Selecionar Produto (Ficha Técnica)</label>
+                            <select id="estoqueSelectReceita" required class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <!-- Populado dinamicamente -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Quantidade Pronta (Unidades)</label>
+                            <input type="number" min="1" id="estoqueQtdPronta" required placeholder="Ex: 15" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div class="sm:col-span-3 flex justify-end gap-2 mt-2">
+                            <button type="button" id="btnCancelarEstoqueEdit" onclick="cancelarEdicaoEstoque()" class="hidden px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold rounded-xl">Cancelar</button>
+                            <button type="submit" id="btnSalvarEstoqueText" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Adicionar ao Estoque
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="boxes" class="w-4 h-4 text-amber-600"></i> Produtos Prontos em Estoque
+                        </h3>
+                        <div class="text-xs font-bold text-amber-900 bg-amber-100 px-3 py-1.5 rounded-xl">
+                            Valor Total em Estoque: <span id="estoqueValorTotalGeral" class="text-emerald-700 font-extrabold">R$ 0,00</span>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Qtd. em Estoque</th>
+                                    <th class="p-3">CMV Unitário</th>
+                                    <th class="p-3">Custo Total Estoque</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaEstoquePronto" class="divide-y divide-amber-100">
+                                <!-- Inserido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <!-- ==================== CUSTOS FIXOS ==================== -->
             <section id="sec-custosFixos" class="tab-content hidden space-y-5">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -668,6 +729,7 @@
         let appData = {
             insumos: [],
             receitas: [],
+            estoquePronto: [],
             custosFixos: { gas: 0, energia: 0, mei: 0, proLabore: 0, outros: 0, taxaRateio: 15 },
             precificacao: { margemDesejada: 30, taxaCartao: 5.0 },
             usuarios: USUARIOS_PADRAO
@@ -718,6 +780,7 @@
             document.getElementById('app-main-content').classList.remove('hidden');
             renderInsumos();
             renderReceitas();
+            renderEstoquePronto();
             renderCustosFixos();
             renderPrecificacao();
             renderDashboard();
@@ -796,6 +859,7 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     appData = docSnap.data();
+                    if(!appData.estoquePronto) appData.estoquePronto = [];
                     
                     // Garante que a lista de usuários existe e contém os acessos padrão
                     if(!appData.usuarios || appData.usuarios.length === 0) {
@@ -815,6 +879,7 @@
                     const savedLocal = localStorage.getItem('delicias_go_data');
                     if (savedLocal) {
                         appData = JSON.parse(savedLocal);
+                        if(!appData.estoquePronto) appData.estoquePronto = [];
                         if(!appData.usuarios) appData.usuarios = [...USUARIOS_PADRAO];
                         await salvarNaNuvem();
                     }
@@ -822,7 +887,10 @@
             } catch(e) {
                 console.error("Erro ao carregar da nuvem, usando LocalStorage", e);
                 const saved = localStorage.getItem('delicias_go_data');
-                if (saved) appData = JSON.parse(saved);
+                if (saved) {
+                    appData = JSON.parse(saved);
+                    if(!appData.estoquePronto) appData.estoquePronto = [];
+                }
             }
         }
 
@@ -855,9 +923,11 @@
                         const parsedData = JSON.parse(e.target.result);
                         if(parsedData && parsedData.insumos && parsedData.receitas) {
                             appData = parsedData;
+                            if(!appData.estoquePronto) appData.estoquePronto = [];
                             await salvarNaNuvem();
                             renderInsumos();
                             renderReceitas();
+                            renderEstoquePronto();
                             renderCustosFixos();
                             renderPrecificacao();
                             renderDashboard();
@@ -881,6 +951,7 @@
 
             if(tabId === 'dashboard') renderDashboard();
             if(tabId === 'precificacao') renderPrecificacao();
+            if(tabId === 'estoquePronto') renderEstoquePronto();
         }
 
         // ==================== INSUMOS ====================
@@ -1002,6 +1073,7 @@
             tempInsumosReceita = [];
             await salvarNaNuvem();
             renderReceitas();
+            renderEstoquePronto();
             document.getElementById('formReceita').reset();
             renderListaInsumosTemp();
         }
@@ -1010,6 +1082,7 @@
             appData.receitas = appData.receitas.filter(r => r.id !== id);
             await salvarNaNuvem();
             renderReceitas();
+            renderEstoquePronto();
         }
 
         function renderReceitas() {
@@ -1031,6 +1104,121 @@
                 `;
                 tbody.appendChild(tr);
             });
+            lucide.createIcons();
+        }
+
+        // ==================== ESTOQUE PRONTO PARA VENDA ====================
+        window.salvarEstoquePronto = async function(e) {
+            e.preventDefault();
+            const idEditando = document.getElementById('estoqueIdEditando').value;
+            const receitaId = parseInt(document.getElementById('estoqueSelectReceita').value);
+            const quantidade = parseInt(document.getElementById('estoqueQtdPronta').value) || 0;
+
+            if(!receitaId || quantidade <= 0) {
+                alert("Selecione um produto válido e informe a quantidade.");
+                return;
+            }
+
+            const receitaObj = appData.receitas.find(r => r.id === receitaId);
+            if(!receitaObj) {
+                alert("Produto não encontrado nas fichas técnicas.");
+                return;
+            }
+
+            if(idEditando) {
+                // Edição de item existente
+                const item = appData.estoquePronto.find(e => e.id == idEditando);
+                if(item) {
+                    item.receitaId = receitaId;
+                    item.nomeProduto = receitaObj.nome;
+                    item.quantidade = quantidade;
+                    item.cmvUnitario = receitaObj.cmvUnitario;
+                    item.custoTotalEstoque = quantidade * receitaObj.cmvUnitario;
+                }
+            } else {
+                // Novo lançamento
+                const novoItem = {
+                    id: Date.now(),
+                    receitaId: receitaId,
+                    nomeProduto: receitaObj.nome,
+                    quantidade: quantidade,
+                    cmvUnitario: receitaObj.cmvUnitario,
+                    custoTotalEstoque: quantidade * receitaObj.cmvUnitario
+                };
+                appData.estoquePronto.push(novoItem);
+            }
+
+            await salvarNaNuvem();
+            cancelarEdicaoEstoque();
+            renderEstoquePronto();
+        }
+
+        window.editarEstoquePronto = function(id) {
+            const item = appData.estoquePronto.find(e => e.id === id);
+            if(!item) return;
+
+            document.getElementById('estoqueIdEditando').value = item.id;
+            document.getElementById('estoqueSelectReceita').value = item.receitaId;
+            document.getElementById('estoqueQtdPronta').value = item.quantidade;
+            document.getElementById('btnCancelarEstoqueEdit').classList.remove('hidden');
+            document.getElementById('btnSalvarEstoqueText').innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Atualizar Estoque';
+            lucide.createIcons();
+        }
+
+        window.cancelarEdicaoEstoque = function() {
+            document.getElementById('formEstoquePronto').reset();
+            document.getElementById('estoqueIdEditando').value = '';
+            document.getElementById('btnCancelarEstoqueEdit').classList.add('hidden');
+            document.getElementById('btnSalvarEstoqueText').innerHTML = '<i data-lucide="plus-circle" class="w-4 h-4"></i> Adicionar ao Estoque';
+            lucide.createIcons();
+        }
+
+        window.deletarEstoquePronto = async function(id) {
+            if(confirm("Tem certeza que deseja remover este item do estoque?")) {
+                appData.estoquePronto = appData.estoquePronto.filter(e => e.id !== id);
+                await salvarNaNuvem();
+                renderEstoquePronto();
+            }
+        }
+
+        function renderEstoquePronto() {
+            const selectReceita = document.getElementById('estoqueSelectReceita');
+            if(selectReceita) {
+                selectReceita.innerHTML = appData.receitas.length === 0
+                    ? '<option value="">Nenhuma ficha técnica cadastrada</option>'
+                    : '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => `<option value="${r.id}">${r.nome} (CMV: R$ ${r.cmvUnitario.toFixed(2)})</option>`).join('');
+            }
+
+            const tbody = document.getElementById('tabelaEstoquePronto');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let valorGeralEstoque = 0;
+
+            appData.estoquePronto.forEach(item => {
+                const custoTotal = item.quantidade * item.cmvUnitario;
+                valorGeralEstoque += custoTotal;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${item.nomeProduto}</td>
+                    <td class="p-3 font-bold text-amber-900">${item.quantidade} un</td>
+                    <td class="p-3">R$ ${item.cmvUnitario.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">R$ ${custoTotal.toFixed(2)}</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="editarEstoquePronto(${item.id})" class="text-amber-700 hover:text-amber-900 p-1" title="Editar"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deletarEstoquePronto(${item.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const valGeralEl = document.getElementById('estoqueValorTotalGeral');
+            if(valGeralEl) {
+                valGeralEl.innerText = `R$ ${valorGeralEstoque.toFixed(2)}`;
+            }
+
             lucide.createIcons();
         }
 
@@ -1243,3 +1431,4 @@
     </script>
 </body>
 </html>
+
