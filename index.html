@@ -1,3 +1,10 @@
+Aqui está o código-fonte completo e atualizado do seu index.html.
+Adicionei a nova aba "Controle de Vendas", que integra e correlaciona todas as áreas do sistema:
+ * Seleção de Produtos: Puxa diretamente o cardápio cadastrado nas Fichas Técnicas.
+ * Preço Inteligente: Ao selecionar o produto, o campo de preço unitário é preenchido automaticamente com o preço sugerido pela aba de Precificação (já considerando a margem desejada e taxa de cartão).
+ * Baixa Automática no Estoque: Ao registrar uma venda, o sistema abate automaticamente a quantidade vendida no Estoque Pronto.
+ * Demonstrativo Financeiro: Calcula em tempo real o Faturamento Total, o CMV das vendas e o Lucro Líquido real descontando taxas e rateios.
+Substitua todo o conteúdo do seu arquivo index.html no repositório do GitHub por este código:
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -172,6 +179,9 @@
                 <button onclick="switchTab('estoquePronto')" id="tab-estoquePronto" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
                     <i data-lucide="boxes" class="w-4 h-4"></i> Estoque Pronto
                 </button>
+                <button onclick="switchTab('vendas')" id="tab-vendas" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i> Controle de Vendas
+                </button>
                 <button onclick="switchTab('custosFixos')" id="tab-custosFixos" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
                     <i data-lucide="calculator" class="w-4 h-4"></i> Custos Fixos
                 </button>
@@ -260,15 +270,15 @@
 
                     <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm">
                         <h3 class="font-bold text-amber-950 flex items-center gap-2 mb-3 text-sm sm:text-base">
-                            <i data-lucide="scroll-text" class="w-4 h-4 text-amber-600"></i> Resumo do Cardápio
+                            <i data-lucide="scroll-text" class="w-4 h-4 text-amber-600"></i> Resumo do Cardápio & Vendas
                         </h3>
                         <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
                             <span class="text-amber-800">Fichas Técnicas Salvas</span>
                             <span id="dash-total-receitas" class="font-bold text-amber-950">0</span>
                         </div>
                         <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
-                            <span class="text-amber-800">Custos Fixos Totais</span>
-                            <span id="dash-total-custos-fixos" class="font-bold text-amber-950">R$ 0,00</span>
+                            <span class="text-amber-800">Total Faturado em Vendas</span>
+                            <span id="dash-total-faturamento" class="font-bold text-emerald-700">R$ 0,00</span>
                         </div>
                     </div>
                 </div>
@@ -505,6 +515,87 @@
                 </div>
             </section>
 
+            <!-- ==================== CONTROLE DE VENDAS ==================== -->
+            <section id="sec-vendas" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                        <i data-lucide="shopping-bag" class="w-5 h-5 text-amber-600"></i> Registrar Nova Venda
+                    </h2>
+                    <form id="formVenda" onsubmit="salvarVenda(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-end">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Produto (Cardápio / Ficha Técnica)</label>
+                            <select id="vendaSelectReceita" required onchange="atualizarPrecoSugeridoVenda()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <!-- Populado dinamicamente -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Quantidade Vendida</label>
+                            <input type="number" min="1" id="vendaQtd" required value="1" placeholder="Ex: 2" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Preço Unitário de Venda (R$)</label>
+                            <input type="number" step="0.01" id="vendaPrecoUn" required placeholder="0,00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold text-emerald-700 bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Canal / Forma de Pagamento</label>
+                            <select id="vendaCanal" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <option value="WhatsApp / Pix">WhatsApp / Pix</option>
+                                <option value="Delivery / iFood">Delivery / iFood</option>
+                                <option value="Presencial / Encomenda">Presencial / Encomenda</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-3 flex justify-end mt-2">
+                            <button type="submit" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i> Concluir e Baixar no Estoque
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- CARDS DE RESUMO DE VENDAS -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <p class="text-xs font-bold text-amber-800 uppercase">Faturamento Total</p>
+                        <p id="vendasTotalFaturamento" class="text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <p class="text-xs font-bold text-amber-800 uppercase">CMV Total das Vendas</p>
+                        <p id="vendasTotalCmv" class="text-2xl font-black text-amber-900 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-cafe">
+                        <p class="text-xs font-bold text-amber-800 uppercase">Lucro Líquido Estimado</p>
+                        <p id="vendasTotalLucro" class="text-2xl font-black text-cafe mt-1">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="receipt" class="w-4 h-4 text-amber-600"></i> Histórico de Vendas Realizadas
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Data / Hora</th>
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Qtd</th>
+                                    <th class="p-3">Preço Un.</th>
+                                    <th class="p-3">Total Venda</th>
+                                    <th class="p-3">Lucro Líquido</th>
+                                    <th class="p-3">Canal</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaVendas" class="divide-y divide-amber-100">
+                                <!-- Inserido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <!-- ==================== CUSTOS FIXOS ==================== -->
             <section id="sec-custosFixos" class="tab-content hidden space-y-5">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -727,6 +818,7 @@
             insumos: [],
             receitas: [],
             estoquePronto: [],
+            vendas: [],
             custosFixos: { gas: 0, energia: 0, mei: 0, proLabore: 0, outros: 0, taxaRateio: 15 },
             precificacao: { margemDesejada: 30, taxaCartao: 5.0 },
             usuarios: USUARIOS_PADRAO
@@ -778,6 +870,7 @@
             renderInsumos();
             renderReceitas();
             renderEstoquePronto();
+            renderVendas();
             renderCustosFixos();
             renderPrecificacao();
             renderDashboard();
@@ -857,12 +950,12 @@
                 if (docSnap.exists()) {
                     appData = docSnap.data();
                     if(!appData.estoquePronto) appData.estoquePronto = [];
+                    if(!appData.vendas) appData.vendas = [];
                     
                     // Garante que a lista de usuários existe e contém os acessos padrão
                     if(!appData.usuarios || appData.usuarios.length === 0) {
                         appData.usuarios = [...USUARIOS_PADRAO];
                     } else {
-                        // Mescla/atualiza para garantir que as credenciais mais recentes estejam disponíveis
                         USUARIOS_PADRAO.forEach(uPadrao => {
                             const idx = appData.usuarios.findIndex(u => u.email.toLowerCase() === uPadrao.email.toLowerCase());
                             if(idx === -1) {
@@ -877,6 +970,7 @@
                     if (savedLocal) {
                         appData = JSON.parse(savedLocal);
                         if(!appData.estoquePronto) appData.estoquePronto = [];
+                        if(!appData.vendas) appData.vendas = [];
                         if(!appData.usuarios) appData.usuarios = [...USUARIOS_PADRAO];
                         await salvarNaNuvem();
                     }
@@ -887,6 +981,7 @@
                 if (saved) {
                     appData = JSON.parse(saved);
                     if(!appData.estoquePronto) appData.estoquePronto = [];
+                    if(!appData.vendas) appData.vendas = [];
                 }
             }
         }
@@ -921,10 +1016,12 @@
                         if(parsedData && parsedData.insumos && parsedData.receitas) {
                             appData = parsedData;
                             if(!appData.estoquePronto) appData.estoquePronto = [];
+                            if(!appData.vendas) appData.vendas = [];
                             await salvarNaNuvem();
                             renderInsumos();
                             renderReceitas();
                             renderEstoquePronto();
+                            renderVendas();
                             renderCustosFixos();
                             renderPrecificacao();
                             renderDashboard();
@@ -949,6 +1046,7 @@
             if(tabId === 'dashboard') renderDashboard();
             if(tabId === 'precificacao') renderPrecificacao();
             if(tabId === 'estoquePronto') renderEstoquePronto();
+            if(tabId === 'vendas') renderVendas();
         }
 
         // ==================== INSUMOS ====================
@@ -1071,6 +1169,7 @@
             await salvarNaNuvem();
             renderReceitas();
             renderEstoquePronto();
+            renderVendas();
             document.getElementById('formReceita').reset();
             renderListaInsumosTemp();
         }
@@ -1080,6 +1179,7 @@
             await salvarNaNuvem();
             renderReceitas();
             renderEstoquePronto();
+            renderVendas();
         }
 
         function renderReceitas() {
@@ -1123,7 +1223,6 @@
             }
 
             if(idEditando) {
-                // Edição de item existente
                 const item = appData.estoquePronto.find(e => e.id == idEditando);
                 if(item) {
                     item.receitaId = receitaId;
@@ -1133,7 +1232,6 @@
                     item.custoTotalEstoque = quantidade * receitaObj.cmvUnitario;
                 }
             } else {
-                // Novo lançamento
                 const novoItem = {
                     id: Date.now(),
                     receitaId: receitaId,
@@ -1219,6 +1317,143 @@
             lucide.createIcons();
         }
 
+        // ==================== CONTROLE DE VENDAS ====================
+        window.atualizarPrecoSugeridoVenda = function() {
+            const select = document.getElementById('vendaSelectReceita');
+            const receitaId = parseInt(select.value);
+            if(!receitaId) return;
+
+            const receitaObj = appData.receitas.find(r => r.id === receitaId);
+            if(!receitaObj) return;
+
+            const margemDesejada = appData.precificacao.margemDesejada || 30;
+            const taxaCartao = appData.precificacao.taxaCartao || 5;
+            const taxaRateio = appData.custosFixos.taxaRateio || 15;
+
+            const cmv = receitaObj.cmvUnitario;
+            const custoFixoAgregado = cmv * (taxaRateio / 100);
+            const custoTotalUnitario = cmv + custoFixoAgregado;
+            const percentualDeducoes = (margemDesejada + taxaCartao) / 100;
+            const divisor = percentualDeducoes < 1 ? (1 - percentualDeducoes) : 0.1;
+            const precoSugerido = custoTotalUnitario / divisor;
+
+            document.getElementById('vendaPrecoUn').value = precoSugerido.toFixed(2);
+        }
+
+        window.salvarVenda = async function(e) {
+            e.preventDefault();
+            const receitaId = parseInt(document.getElementById('vendaSelectReceita').value);
+            const quantidade = parseInt(document.getElementById('vendaQtd').value) || 0;
+            const precoUnitario = parseFloat(document.getElementById('vendaPrecoUn').value) || 0;
+            const canal = document.getElementById('vendaCanal').value;
+
+            if(!receitaId || quantidade <= 0 || precoUnitario <= 0) {
+                alert("Selecione o produto, informe a quantidade e o preço unitário.");
+                return;
+            }
+
+            const receitaObj = appData.receitas.find(r => r.id === receitaId);
+            if(!receitaObj) return;
+
+            const cmvTotal = receitaObj.cmvUnitario * quantidade;
+            const valorTotal = precoUnitario * quantidade;
+
+            const taxaCartaoPct = (appData.precificacao.taxaCartao || 5) / 100;
+            const taxaCartaoReais = valorTotal * taxaCartaoPct;
+            const taxaRateioPct = (appData.custosFixos.taxaRateio || 15) / 100;
+            const custoFixoAgregado = cmvTotal * taxaRateioPct;
+            
+            const lucroTotal = valorTotal - cmvTotal - taxaCartaoReais - custoFixoAgregado;
+
+            // Baixa automática no estoque pronto, se houver
+            const estoqueItem = appData.estoquePronto.find(item => item.receitaId === receitaId);
+            if(estoqueItem) {
+                estoqueItem.quantidade = Math.max(0, estoqueItem.quantidade - quantidade);
+                estoqueItem.custoTotalEstoque = estoqueItem.quantidade * estoqueItem.cmvUnitario;
+                appData.estoquePronto = appData.estoquePronto.filter(item => item.quantidade > 0);
+            }
+
+            const novaVenda = {
+                id: Date.now(),
+                data: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+                receitaId,
+                nomeProduto: receitaObj.nome,
+                quantidade,
+                precoUnitario,
+                valorTotal,
+                cmvTotal,
+                lucroTotal,
+                canal
+            };
+
+            appData.vendas.push(novaVenda);
+            await salvarNaNuvem();
+            renderVendas();
+            renderEstoquePronto();
+            document.getElementById('formVenda').reset();
+            document.getElementById('vendaQtd').value = "1";
+            alert("Venda registrada com sucesso e estoque atualizado!");
+        }
+
+        window.deletarVenda = async function(id) {
+            if(confirm("Tem certeza que deseja excluir esta venda?")) {
+                appData.vendas = appData.vendas.filter(v => v.id !== id);
+                await salvarNaNuvem();
+                renderVendas();
+            }
+        }
+
+        function renderVendas() {
+            const selectReceita = document.getElementById('vendaSelectReceita');
+            if(selectReceita) {
+                selectReceita.innerHTML = appData.receitas.length === 0
+                    ? '<option value="">Nenhuma ficha técnica cadastrada</option>'
+                    : '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => `<option value="${r.id}">${r.nome} (CMV: R$ ${r.cmvUnitario.toFixed(2)})</option>`).join('');
+            }
+
+            const tbody = document.getElementById('tabelaVendas');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let totalFaturamento = 0;
+            let totalCmv = 0;
+            let totalLucro = 0;
+
+            appData.vendas.forEach(v => {
+                totalFaturamento += v.valorTotal;
+                totalCmv += v.cmvTotal;
+                totalLucro += v.lucroTotal;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 text-amber-900">${v.data}</td>
+                    <td class="p-3 font-semibold text-amber-950">${v.nomeProduto}</td>
+                    <td class="p-3 font-bold">${v.quantidade} un</td>
+                    <td class="p-3">R$ ${v.precoUnitario.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">R$ ${v.valorTotal.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-cafe">R$ ${v.lucroTotal.toFixed(2)}</td>
+                    <td class="p-3"><span class="bg-amber-100 text-amber-900 text-[11px] px-2 py-1 rounded-md">${v.canal}</span></td>
+                    <td class="p-3 text-center">
+                        <button onclick="deletarVenda(${v.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir Venda"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const fatEl = document.getElementById('vendasTotalFaturamento');
+            const cmvEl = document.getElementById('vendasTotalCmv');
+            const lucEl = document.getElementById('vendasTotalLucro');
+            const dashFatEl = document.getElementById('dash-total-faturamento');
+
+            if(fatEl) fatEl.innerText = `R$ ${totalFaturamento.toFixed(2)}`;
+            if(cmvEl) cmvEl.innerText = `R$ ${totalCmv.toFixed(2)}`;
+            if(lucEl) lucEl.innerText = `R$ ${totalLucro.toFixed(2)}`;
+            if(dashFatEl) dashFatEl.innerText = `R$ ${totalFaturamento.toFixed(2)}`;
+
+            lucide.createIcons();
+        }
+
         // ==================== CUSTOS FIXOS ====================
         window.salvarCustosFixos = async function(e) {
             if(e) e.preventDefault();
@@ -1299,6 +1534,12 @@
             const cf = appData.custosFixos;
             const custoFixoTotal = cf.gas + cf.energia + cf.mei + cf.proLabore + cf.outros;
             document.getElementById('dash-total-custos-fixos').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+
+            let totalFaturamento = 0;
+            if(appData.vendas && appData.vendas.length > 0) {
+                totalFaturamento = appData.vendas.reduce((acc, v) => acc + v.valorTotal, 0);
+            }
+            document.getElementById('dash-total-faturamento').innerText = `R$ ${totalFaturamento.toFixed(2)}`;
 
             if(appData.receitas.length === 0) {
                 document.getElementById('dash-maior-margem-nome').innerText = "Sem receitas";
@@ -1429,3 +1670,4 @@
 </body>
 </html>
 
+Basta copiar esse código, substituir no arquivo index.html do seu repositório e fazer o commit. O sistema de vendas já estará integrado e sincronizado em nuvem!
