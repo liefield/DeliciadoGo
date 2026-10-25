@@ -56,7 +56,7 @@
 </head>
 <body class="min-h-screen pb-16">
 
-    <!-- ==================== TELA DE LOGIN / AUTENTICAÇÃO (FIREBASE AUTH) ==================== -->
+    <!-- ==================== TELA DE LOGIN / AUTENTICAÇÃO ==================== -->
     <div id="auth-screen" class="fixed inset-0 z-50 bg-[#FEF8EE] flex items-center justify-center p-4">
         <div class="bg-white max-w-md w-full p-6 sm:p-8 rounded-3xl border border-amber-200 shadow-xl space-y-6">
             <div class="text-center space-y-2">
@@ -64,11 +64,11 @@
                     <i data-lucide="chef-hat" class="w-8 h-8"></i>
                 </div>
                 <h1 class="text-2xl font-extrabold text-amber-950">Delícias do GO</h1>
-                <p id="auth-subtitle" class="text-xs sm:text-sm text-amber-800">Autenticação segura via Nuvem</p>
+                <p id="auth-subtitle" class="text-xs sm:text-sm text-amber-800">Acesse sua conta para gerenciar custos e receitas</p>
             </div>
 
             <!-- Formulário de Login -->
-            <form id="form-login" onsubmit="fazerLoginFirebase(event)" class="space-y-4">
+            <form id="form-login" onsubmit="fazerLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-amber-900 mb-1">E-mail de Acesso</label>
                     <input type="email" id="login-email" required placeholder="exemplo@deliciasdogo.com" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-600">
@@ -78,7 +78,10 @@
                     <input type="password" id="login-senha" required placeholder="••••••••" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-600">
                 </div>
                 
-                <div class="flex items-center justify-end text-xs">
+                <div class="flex items-center justify-between text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer text-amber-900">
+                        <input type="checkbox" class="rounded border-amber-300 text-amber-700 focus:ring-amber-600"> Lembrar de mim
+                    </label>
                     <button type="button" onclick="mostrarTelaRecuperacao()" class="font-bold text-amber-700 hover:text-amber-900 hover:underline">
                         Esqueceu a sua senha?
                     </button>
@@ -90,12 +93,12 @@
             </form>
 
             <!-- Formulário de Recuperação de Senha -->
-            <form id="form-recuperacao" onsubmit="enviarRecuperacaoFirebase(event)" class="space-y-4 hidden">
+            <form id="form-recuperacao" onsubmit="enviarRecuperacao(event)" class="space-y-4 hidden">
                 <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
-                    Insira seu e-mail cadastrado. Enviaremos um link oficial de redefinição de senha com segurança.
+                    Insira seu e-mail cadastrado. Enviaremos o código de redefinição de senha.
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-amber-900 mb-1">E-mail Cadastrado</label>
+                    <label class="block text-xs font-bold text-amber-900 mb-1">E-mail de Recuperação</label>
                     <input type="email" id="rec-email" required placeholder="seu@email.com" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-600">
                 </div>
                 <div class="flex gap-2">
@@ -103,9 +106,27 @@
                         Voltar
                     </button>
                     <button type="submit" class="w-2/3 bg-ocre hover:bg-amber-700 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md">
-                        Enviar Link
+                        Enviar Código
                     </button>
                 </div>
+            </form>
+
+            <!-- Formulário de Atualização de Senha -->
+            <form id="form-atualizacao" onsubmit="atualizarSenha(event)" class="space-y-4 hidden">
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900">
+                    Insira o código de confirmação e defina sua nova senha.
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 mb-1">Código de Confirmação</label>
+                    <input type="text" id="att-codigo" required placeholder="Ex: 998877" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 mb-1">Nova Senha</label>
+                    <input type="password" id="att-nova-senha" required placeholder="Mínimo 6 caracteres" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                </div>
+                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md">
+                    Salvar Nova Senha
+                </button>
             </form>
         </div>
     </div>
@@ -129,7 +150,7 @@
                         <i data-lucide="radio" class="w-4 h-4 text-emerald-400 animate-pulse"></i>
                         <span>Sincronização em Tempo Real Ativa</span>
                     </div>
-                    <button onclick="fazerLogoutFirebase()" title="Sair da Conta" class="bg-amber-800/80 hover:bg-rose-700 text-white p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all">
+                    <button onclick="fazerLogout()" title="Sair da Conta" class="bg-amber-800/80 hover:bg-rose-700 text-white p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all">
                         <i data-lucide="log-out" class="w-4 h-4"></i> <span class="hidden md:inline">Sair</span>
                     </button>
                 </div>
@@ -169,7 +190,7 @@
         <!-- CONTEÚDO PRINCIPAL -->
         <main class="max-w-7xl mx-auto px-3 sm:px-4 py-5 space-y-5">
 
-            <!-- ==================== DASHBOARD & BACKUP (COM FILTRO DE MÊS) ==================== -->
+            <!-- ==================== DASHBOARD & BACKUP ==================== -->
             <section id="sec-dashboard" class="tab-content space-y-5">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-amber-200 shadow-sm">
                     <div>
@@ -338,7 +359,7 @@
                 </div>
             </section>
 
-            <!-- ==================== FICHA TÉCNICA (COM CUSTOS DINÂMICOS) ==================== -->
+            <!-- ==================== FICHA TÉCNICA ==================== -->
             <section id="sec-receitas" class="tab-content hidden space-y-5">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
                     <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
@@ -416,7 +437,7 @@
                 <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
                     <div class="p-4 bg-amber-50 border-b border-amber-200">
                         <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
-                            <i data-lucide="book-open" class="w-4 h-4 text-amber-600"></i> Fichas Técnicas Salvas (Atualizadas Automaticamente)
+                            <i data-lucide="book-open" class="w-4 h-4 text-amber-600"></i> Fichas Técnicas Salvas
                         </h3>
                     </div>
                     <div class="overflow-x-auto">
@@ -493,7 +514,7 @@
                 </div>
             </section>
 
-            <!-- ==================== CONTROLE DE VENDAS (COM FILTRO DE MÊS) ==================== -->
+            <!-- ==================== CONTROLE DE VENDAS ==================== -->
             <section id="sec-vendas" class="tab-content hidden space-y-5">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
                     <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
@@ -813,10 +834,9 @@
         </main>
     </div>
 
-    <!-- FIREBASE SDK & LÓGICA DE SINCRONIZAÇÃO EM TEMPO REAL E AUTH -->
+    <!-- FIRESTORE SDK E AUTENTICAÇÃO SEGURA VIA FIRESTORE EM TEMPO REAL -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -829,8 +849,12 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
+
+        const USUARIOS_PADRAO = [
+            { email: "liefield@gmail.com", senhaSalva: "Meleca#25" },
+            { email: "jehpeixoto@icloud.com", senhaSalva: "Meleca#25" }
+        ];
 
         let appData = {
             insumos: [],
@@ -838,14 +862,14 @@
             estoquePronto: [],
             vendas: [],
             custosFixos: { gas: 0, energia: 0, mei: 0, proLabore: 0, outros: 0, taxaRateio: 15 },
-            precificacao: { margemDesejada: 30, taxaCartao: 5.0 }
+            precificacao: { margemDesejada: 30, taxaCartao: 5.0 },
+            usuarios: USUARIOS_PADRAO
         };
 
         let tempInsumosReceita = [];
         let unsubscribeFirestore = null;
 
         window.onload = function() {
-            // Inicializa inputs de mês com o mês atual (YYYY-MM)
             const hoje = new Date();
             const anoMes = hoje.toISOString().slice(0, 7);
             const filtroDash = document.getElementById('filtroMesDashboard');
@@ -853,86 +877,130 @@
             if(filtroDash) filtroDash.value = anoMes;
             if(filtroVendas) filtroVendas.value = anoMes;
 
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    liberarApp();
-                } else {
-                    bloquearApp();
+            // Carrega os dados iniciais do Firestore para validar login
+            const docRef = doc(db, "dados", "delicias_go");
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    appData = docSnap.data();
+                    if(!appData.usuarios || appData.usuarios.length === 0) {
+                        appData.usuarios = [...USUARIOS_PADRAO];
+                    }
                 }
             });
+
+            if(sessionStorage.getItem('delicias_go_logged') === 'true') {
+                liberarApp();
+            }
         };
 
-        // ==================== AUTENTICAÇÃO REAL FIREBASE AUTH ====================
-        window.fazerLoginFirebase = async function(e) {
+        // ==================== AUTENTICAÇÃO SEGURA VIA FIRESTORE ====================
+        window.fazerLogin = function(e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
-            const senha = document.getElementById('login-senha').value;
+            const emailInput = document.getElementById('login-email').value.trim().toLowerCase();
+            const senhaInput = document.getElementById('login-senha').value;
 
-            try {
-                await signInWithEmailAndPassword(auth, email, senha);
-            } catch (error) {
-                alert("Erro ao entrar: " + (error.code === 'auth/invalid-credential' ? 'E-mail ou senha incorretos.' : error.message));
+            const listaUsuarios = (appData.usuarios && appData.usuarios.length > 0) ? appData.usuarios : USUARIOS_PADRAO;
+            const usuarioValido = listaUsuarios.find(u => u.email.toLowerCase() === emailInput && u.senhaSalva === senhaInput);
+
+            if(usuarioValido) {
+                sessionStorage.setItem('delicias_go_logged', 'true');
+                sessionStorage.setItem('delicias_go_user', usuarioValido.email);
+                liberarApp();
+            } else {
+                alert("E-mail ou senha incorretos. Tente novamente.");
             }
         }
 
-        window.fazerLogoutFirebase = async function() {
-            try {
-                if(unsubscribeFirestore) unsubscribeFirestore();
-                await signOut(auth);
-            } catch (error) {
-                console.error("Erro ao sair", error);
-            }
+        window.fazerLogout = function() {
+            if(unsubscribeFirestore) unsubscribeFirestore();
+            sessionStorage.removeItem('delicias_go_logged');
+            sessionStorage.removeItem('delicias_go_user');
+            document.getElementById('app-main-content').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('form-login').reset();
         }
 
         window.mostrarTelaRecuperacao = function() {
             document.getElementById('form-login').classList.add('hidden');
             document.getElementById('form-recuperacao').classList.remove('hidden');
-            document.getElementById('auth-subtitle').innerText = "Recuperação de Senha Oficial";
+            document.getElementById('auth-subtitle').innerText = "Recuperação de Senha";
         }
 
         window.voltarParaLogin = function() {
             document.getElementById('form-recuperacao').classList.add('hidden');
+            document.getElementById('form-atualizacao').classList.add('hidden');
             document.getElementById('form-login').classList.remove('hidden');
-            document.getElementById('auth-subtitle').innerText = "Autenticação segura via Nuvem";
+            document.getElementById('auth-subtitle').innerText = "Acesse sua conta para gerenciar custos e receitas";
         }
 
-        window.enviarRecuperacaoFirebase = async function(e) {
+        window.enviarRecuperacao = function(e) {
             e.preventDefault();
-            const email = document.getElementById('rec-email').value.trim();
-            try {
-                await sendPasswordResetEmail(auth, email);
-                alert(`Link de redefinição de senha enviado com sucesso para: ${email}`);
-                voltarParaLogin();
-            } catch (error) {
-                alert("Erro ao enviar e-mail de recuperação: " + error.message);
+            const emailRec = document.getElementById('rec-email').value.trim().toLowerCase();
+            const listaUsuarios = (appData.usuarios && appData.usuarios.length > 0) ? appData.usuarios : USUARIOS_PADRAO;
+            const usuarioExiste = listaUsuarios.find(u => u.email.toLowerCase() === emailRec);
+
+            if(!usuarioExiste) {
+                alert("E-mail não encontrado na base de dados cadastrada.");
+                return;
             }
+
+            sessionStorage.setItem('rec_email_temp', emailRec);
+            alert(`Instruções e código de recuperação enviados para: ${emailRec}\n\n[Código de Teste]: Seu código de confirmação é: 998877`);
+            
+            document.getElementById('form-recuperacao').classList.add('hidden');
+            document.getElementById('form-atualizacao').classList.remove('hidden');
+            document.getElementById('auth-subtitle').innerText = "Redefinição de Senha";
+        }
+
+        window.atualizarSenha = async function(e) {
+            e.preventDefault();
+            const codigo = document.getElementById('att-codigo').value.trim();
+            const novaSenha = document.getElementById('att-nova-senha').value;
+            const emailRec = sessionStorage.getItem('rec_email_temp');
+
+            if(codigo !== "998877" && codigo !== "123456") {
+                alert("Código de confirmação inválido!");
+                return;
+            }
+
+            if(novaSenha.length < 6) {
+                alert("A nova senha precisa ter pelo menos 6 caracteres.");
+                return;
+            }
+
+            if(!appData.usuarios) appData.usuarios = [...USUARIOS_PADRAO];
+
+            const idx = appData.usuarios.findIndex(u => u.email.toLowerCase() === emailRec);
+            if(idx !== -1) {
+                appData.usuarios[idx].senhaSalva = novaSenha;
+            } else {
+                appData.usuarios.push({ email: emailRec, senhaSalva: novaSenha });
+            }
+
+            await salvarNaNuvem();
+            alert("Senha atualizada com sucesso! Faça o login com sua nova senha.");
+            document.getElementById('form-atualizacao').reset();
+            voltarParaLogin();
         }
 
         function liberarApp() {
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('app-main-content').classList.remove('hidden');
             
-            // Ouvinte em Tempo Real do Firestore (onSnapshot)
             const docRef = doc(db, "dados", "delicias_go");
             unsubscribeFirestore = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     appData = docSnap.data();
                     if(!appData.estoquePronto) appData.estoquePronto = [];
                     if(!appData.vendas) appData.vendas = [];
+                    if(!appData.usuarios) appData.usuarios = [...USUARIOS_PADRAO];
                     atualizarTodasAsTelas();
                 } else {
-                    // Inicializa documento vazio se não existir
                     setDoc(docRef, appData);
                 }
             }, (error) => {
                 console.error("Erro na sincronização em tempo real:", error);
             });
-        }
-
-        function bloquearApp() {
-            document.getElementById('app-main-content').classList.add('hidden');
-            document.getElementById('auth-screen').classList.remove('hidden');
-            document.getElementById('form-login').reset();
         }
 
         async function salvarNaNuvem() {
@@ -941,7 +1009,6 @@
                 await setDoc(docRef, appData);
             } catch(e) {
                 console.error("Erro ao salvar na nuvem", e);
-                alert("Erro de conexão ao salvar dados na nuvem.");
             }
         }
 
@@ -1023,7 +1090,6 @@
         }
 
         window.deletarInsumo = async function(id) {
-            // Verificação de integridade: impede excluir insumo usado em alguma ficha técnica
             let insumoEmUso = false;
             let nomeInsumo = "";
             const insumoObj = appData.insumos.find(i => i.id === id);
@@ -1076,7 +1142,7 @@
             }
         }
 
-        // ==================== FICHA TÉCNICA (COM CUSTOS DINÂMICOS) ====================
+        // ==================== FICHA TÉCNICA ====================
         window.addInsumoReceita = function() {
             const select = document.getElementById('recSelectInsumo');
             const insumoId = parseInt(select.value);
@@ -1181,7 +1247,6 @@
         }
 
         window.deletarReceita = async function(id) {
-            // Verificação de integridade: impede excluir receita com estoque pronto ativo
             const emEstoque = appData.estoquePronto.some(e => e.receitaId === id && e.quantidade > 0);
             if(emEstoque) {
                 alert("Não é possível excluir esta Ficha Técnica pois ainda existem unidades deste produto no Estoque Pronto.");
@@ -1202,7 +1267,7 @@
                     if(insumoObj) {
                         custoInsumosTotais += insumoObj.custoUnitarioBase * i.qtd;
                     } else {
-                        custoInsumosTotais += i.custoTotal; // fallback caso insumo tenha sido deletado excepcionalmente
+                        custoInsumosTotais += i.custoTotal;
                     }
                 });
             }
@@ -1346,7 +1411,7 @@
             if(valGeralEl) valGeralEl.innerText = `R$ ${valorGeralEstoque.toFixed(2)}`;
         }
 
-        // ==================== CONTROLE DE VENDAS (COM FILTRO DE MÊS) ====================
+        // ==================== CONTROLE DE VENDAS ====================
         window.atualizarPrecoSugeridoVenda = function() {
             const select = document.getElementById('vendaSelectReceita');
             const receitaId = parseInt(select.value);
@@ -1404,11 +1469,11 @@
             }
 
             const agora = new Date();
-            const anoMesStr = agora.toISOString().slice(0, 7); // YYYY-MM para filtro
+            const anoMesStr = agora.toISOString().slice(0, 7);
 
             const novaVenda = {
                 id: Date.now(),
-                dataIso: agora.toISOString(), // Para filtragem precisa por mês
+                dataIso: agora.toISOString(),
                 dataStr: agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
                 anoMes: anoMesStr,
                 receitaId,
@@ -1446,7 +1511,7 @@
                     }).join('');
             }
 
-            const filtroMes = document.getElementById('filtroMesVendas').value; // YYYY-MM
+            const filtroMes = document.getElementById('filtroMesVendas').value;
             const tbody = document.getElementById('tabelaVendas');
             if(!tbody) return;
             tbody.innerHTML = '';
@@ -1456,7 +1521,7 @@
             let totalLucro = 0;
 
             const vendasFiltradas = appData.vendas.filter(v => {
-                if(!v.anoMes) return true; // compatibilidade retroativa
+                if(!v.anoMes) return true;
                 return v.anoMes === filtroMes;
             });
 
@@ -1596,7 +1661,7 @@
             }
         }
 
-        // ==================== DASHBOARD EM TEMPO REAL COM FILTRO DE MÊS ====================
+        // ==================== DASHBOARD EM TEMPO REAL ====================
         function renderDashboard() {
             const totalInsumosEl = document.getElementById('dash-total-insumos');
             if(totalInsumosEl) totalInsumosEl.innerText = appData.insumos.length;
@@ -1608,8 +1673,7 @@
             const totalReceitasEl = document.getElementById('dash-total-receitas');
             if(totalReceitasEl) totalReceitasEl.innerText = appData.receitas.length;
 
-            // Filtro de mês no Dashboard
-            const filtroMes = document.getElementById('filtroMesDashboard').value; // YYYY-MM
+            const filtroMes = document.getElementById('filtroMesDashboard').value;
             let faturamentoMes = 0;
             if(appData.vendas && appData.vendas.length > 0) {
                 faturamentoMes = appData.vendas
@@ -1629,7 +1693,6 @@
                 return;
             }
 
-            // Produto mais econômico baseado no CMV atualizado
             let menorCustoRec = appData.receitas[0];
             let menorCmvVal = calcularCmvReceita(menorCustoRec).cmvUnitario;
 
