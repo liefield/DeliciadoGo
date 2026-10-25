@@ -649,7 +649,7 @@
                 </div>
             </section>
 
-            <!-- ==================== PRECIFICAÇÃO & PROJEÇÃO DO ESTOQUE ==================== -->
+            <!-- ==================== PRECIFICAÇÃO & PROJEÇÃO FINANCEIRA DO ESTOQUE ==================== -->
             <section id="sec-precificacao" class="tab-content hidden space-y-5">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
                     <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
@@ -667,30 +667,38 @@
                     </div>
                 </div>
 
-                <!-- CARDS DE PROJEÇÃO FINANCEIRA DO ESTOQUE ATUAL -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- CARDS DE PROJEÇÃO FINANCEIRA DO ESTOQUE ATUAL COM ROI -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
                         <div class="flex items-center gap-2 text-amber-800 text-xs font-bold uppercase mb-1">
                             <i data-lucide="package" class="w-4 h-4"></i> CMV do Estoque Atual
                         </div>
-                        <p id="projCmvEstoque" class="text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
-                        <p class="text-[11px] text-amber-700 mt-1">Custo investido nos produtos prontos</p>
+                        <p id="projCmvEstoque" class="text-xl sm:text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
+                        <p class="text-[11px] text-amber-700 mt-1">Custo investido nos produtos</p>
                     </div>
 
                     <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
                         <div class="flex items-center gap-2 text-emerald-800 text-xs font-bold uppercase mb-1">
-                            <i data-lucide="trending-up" class="w-4 h-4"></i> Projeção Faturamento Total
+                            <i data-lucide="trending-up" class="w-4 h-4"></i> Faturamento Projetado
                         </div>
-                        <p id="projFaturamentoEstoque" class="text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
-                        <p class="text-[11px] text-emerald-800 mt-1">Valor a receber ao zerar o estoque</p>
+                        <p id="projFaturamentoEstoque" class="text-xl sm:text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                        <p class="text-[11px] text-emerald-800 mt-1">Valor a receber ao zerar estoque</p>
                     </div>
 
                     <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-cafe">
                         <div class="flex items-center gap-2 text-cafe text-xs font-bold uppercase mb-1">
                             <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i> Lucro Líquido Projetado
                         </div>
-                        <p id="projLucroEstoque" class="text-2xl font-black text-cafe mt-1">R$ 0,00</p>
-                        <p class="text-[11px] text-amber-900 mt-1">Renda financeira líquida esperada</p>
+                        <p id="projLucroEstoque" class="text-xl sm:text-2xl font-black text-cafe mt-1">R$ 0,00</p>
+                        <p class="text-[11px] text-amber-900 mt-1">Renda financeira esperada</p>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-indigo-600">
+                        <div class="flex items-center gap-2 text-indigo-800 text-xs font-bold uppercase mb-1">
+                            <i data-lucide="percent" class="w-4 h-4"></i> Retorno Sobre Investimento (ROI)
+                        </div>
+                        <p id="projRoiEstoque" class="text-xl sm:text-2xl font-black text-indigo-700 mt-1">0.0%</p>
+                        <p class="text-[11px] text-indigo-800 mt-1">Retorno percentual do capital</p>
                     </div>
                 </div>
 
@@ -1550,7 +1558,7 @@
             document.getElementById('cfTotalMensalVal').innerText = `R$ ${total.toFixed(2)}`;
         }
 
-        // ==================== PRECIFICAÇÃO & PROJEÇÃO FINANCEIRA DO ESTOQUE ====================
+        // ==================== PRECIFICAÇÃO & PROJEÇÃO FINANCEIRA DO ESTOQUE COM ROI ====================
         window.renderPrecificacao = function() {
             const tbody = document.getElementById('tabelaPrecificacao');
             if(!tbody) return;
@@ -1585,7 +1593,6 @@
                 const lucroLiquidoReais = precoVendaUsado - custoTotalUnitario - taxaCartaoReais;
                 const margemLiquidaPct = precoVendaUsado > 0 ? (lucroLiquidoReais / precoVendaUsado) * 100 : 0;
 
-                // Correlaciona com os dados do Estoque Pronto
                 const itemEstoque = appData.estoquePronto.find(item => item.receitaId === r.id);
                 if (itemEstoque && itemEstoque.quantidade > 0) {
                     const qtdEstoque = itemEstoque.quantidade;
@@ -1611,10 +1618,14 @@
                 tbody.appendChild(tr);
             });
 
+            // Cálculo do Retorno Sobre o Investimento (ROI) em porcentagem
+            const roiEstoque = totalCmvEstoqueAtual > 0 ? (totalLucroProjetadoEstoque / totalCmvEstoqueAtual) * 100 : 0;
+
             // Atualiza os cards de projeção financeira do estoque
             document.getElementById('projCmvEstoque').innerText = `R$ ${totalCmvEstoqueAtual.toFixed(2)}`;
             document.getElementById('projFaturamentoEstoque').innerText = `R$ ${totalFaturamentoProjetadoEstoque.toFixed(2)}`;
             document.getElementById('projLucroEstoque').innerText = `R$ ${totalLucroProjetadoEstoque.toFixed(2)}`;
+            document.getElementById('projRoiEstoque').innerText = `${roiEstoque.toFixed(1)}%`;
 
             lucide.createIcons();
         }
