@@ -363,6 +363,7 @@
                     </h2>
 
                     <form id="formReceita" onsubmit="salvarReceita(event)" class="space-y-4">
+                        <input type="hidden" id="recIdEditando">
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div class="sm:col-span-2">
                                 <label class="block text-xs font-bold text-amber-900 mb-1">Nome do Produto / Pão</label>
@@ -420,8 +421,9 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                        <div class="flex justify-end gap-2">
+                            <button type="button" id="btnCancelarRecEdit" onclick="cancelarEdicaoReceita()" class="hidden px-5 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl text-sm transition-all">Cancelar</button>
+                            <button type="submit" id="btnSalvarRecText" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
                                 <i data-lucide="check" class="w-4 h-4"></i> Salvar Ficha Técnica
                             </button>
                         </div>
@@ -668,7 +670,7 @@
                 <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
                     <div class="p-4 bg-amber-50 border-b border-amber-200">
                         <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
-                            <i data-lucide="tags" class="w-4 h-4 text-amber-600"></i> Sugestão de Preço de Venda
+                            <i data-lucide="tags" class="w-4 h-4 text-amber-600"></i> Sugestão de Preço & Valor Comercializado
                         </h3>
                     </div>
                     <div class="overflow-x-auto">
@@ -680,6 +682,7 @@
                                     <th class="p-3">Custo Fixo Agregado</th>
                                     <th class="p-3">Custo Total</th>
                                     <th class="p-3">Preço Sugerido</th>
+                                    <th class="p-3 bg-amber-200/50">Valor Comercializado (R$)</th>
                                     <th class="p-3">Lucro Líquido</th>
                                     <th class="p-3">Margem Líquida</th>
                                 </tr>
@@ -822,7 +825,6 @@
         window.onload = async function() {
             await carregarDaNuvem();
             
-            // Verifica se já está logado na sessão atual
             if(sessionStorage.getItem('delicias_go_logged') === 'true') {
                 liberarApp();
             }
@@ -837,7 +839,6 @@
             const senhaInput = document.getElementById('login-senha').value;
 
             const listaUsuarios = (appData.usuarios && appData.usuarios.length > 0) ? appData.usuarios : USUARIOS_PADRAO;
-
             const usuarioValido = listaUsuarios.find(u => u.email.toLowerCase() === emailInput && u.senhaSalva === senhaInput);
 
             if(usuarioValido) {
@@ -896,7 +897,6 @@
             }
 
             sessionStorage.setItem('rec_email_temp', emailRec);
-
             alert(`Instruções e código de recuperação enviados para: ${emailRec}\n\n[Código de Teste]: Seu código de confirmação é: 998877`);
             
             document.getElementById('form-recuperacao').classList.add('hidden');
@@ -930,7 +930,6 @@
             }
 
             await salvarNaNuvem();
-
             alert("Senha atualizada com sucesso! Faça o login com sua nova senha.");
             document.getElementById('form-atualizacao').reset();
             voltarParaLogin();
@@ -945,7 +944,6 @@
                     if(!appData.estoquePronto) appData.estoquePronto = [];
                     if(!appData.vendas) appData.vendas = [];
                     
-                    // Garante que a lista de usuários existe e contém os acessos padrão
                     if(!appData.usuarios || appData.usuarios.length === 0) {
                         appData.usuarios = [...USUARIOS_PADRAO];
                     } else {
@@ -1100,7 +1098,7 @@
             lucide.createIcons();
         }
 
-        // ==================== FICHA TÉCNICA ====================
+        // ==================== FICHA TÉCNICA (COM EDIÇÃO) ====================
         window.addInsumoReceita = function() {
             const select = document.getElementById('recSelectInsumo');
             const insumoId = parseInt(select.value);
@@ -1133,7 +1131,7 @@
                     <td class="p-2.5 font-medium">${item.nome} <span class="text-[11px] text-amber-700">(${item.categoria})</span></td>
                     <td class="p-2.5">${item.qtd} ${item.unidade}</td>
                     <td class="p-2.5 font-bold">R$ ${item.custoTotal.toFixed(2)}</td>
-                    <td class="p-2.5 text-center"><button onclick="removerInsumoTemp(${index})" class="text-rose-600 font-bold p-1">✕</button></td>
+                    <td class="p-2.5 text-center"><button type="button" onclick="removerInsumoTemp(${index})" class="text-rose-600 font-bold p-1">✕</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1141,6 +1139,7 @@
 
         window.salvarReceita = async function(e) {
             e.preventDefault();
+            const idEditando = document.getElementById('recIdEditando').value;
             const nome = document.getElementById('recNome').value.trim();
             const rendimento = parseInt(document.getElementById('recRendimento').value) || 1;
             const embalagemUn = parseFloat(document.getElementById('recEmbalagemUn').value) || 0;
@@ -1155,24 +1154,74 @@
             const custoInsumosUnitario = custoInsumosTotais / (rendimento > 0 ? rendimento : 1);
             const cmvUnitario = custoInsumosUnitario + embalagemUn + etiquetaUn;
 
-            const novaReceita = { id: Date.now(), nome, rendimento, insumos: [...tempInsumosReceita], embalagemUn, etiquetaUn, custoInsumosTotais, cmvUnitario };
+            if(idEditando) {
+                // Atualiza receita existente
+                const receitaObj = appData.receitas.find(r => r.id == idEditando);
+                if(receitaObj) {
+                    receitaObj.nome = nome;
+                    receitaObj.rendimento = rendimento;
+                    receitaObj.insumos = [...tempInsumosReceita];
+                    receitaObj.embalagemUn = embalagemUn;
+                    receitaObj.etiquetaUn = etiquetaUn;
+                    receitaObj.custoInsumosTotais = custoInsumosTotais;
+                    receitaObj.cmvUnitario = cmvUnitario;
+                }
+            } else {
+                // Nova receita
+                const novaReceita = { id: Date.now(), nome, rendimento, insumos: [...tempInsumosReceita], embalagemUn, etiquetaUn, custoInsumosTotais, cmvUnitario };
+                appData.receitas.push(novaReceita);
+            }
 
-            appData.receitas.push(novaReceita);
             tempInsumosReceita = [];
+            cancelarEdicaoReceita();
             await salvarNaNuvem();
             renderReceitas();
             renderEstoquePronto();
             renderVendas();
-            document.getElementById('formReceita').reset();
+            renderPrecificacao();
+            alert("Ficha técnica salva e atualizada com sucesso!");
+        }
+
+        window.editarReceita = function(id) {
+            const receitaObj = appData.receitas.find(r => r.id === id);
+            if(!receitaObj) return;
+
+            document.getElementById('recIdEditando').value = receitaObj.id;
+            document.getElementById('recNome').value = receitaObj.nome;
+            document.getElementById('recRendimento').value = receitaObj.rendimento;
+            document.getElementById('recEmbalagemUn').value = receitaObj.embalagemUn || 0;
+            document.getElementById('recEtiquetaUn').value = receitaObj.etiquetaUn || 0;
+
+            tempInsumosReceita = [...receitaObj.insumos];
             renderListaInsumosTemp();
+
+            document.getElementById('btnCancelarRecEdit').classList.remove('hidden');
+            document.getElementById('btnSalvarRecText').innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Atualizar Ficha Técnica';
+            
+            // Rola até o formulário
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lucide.createIcons();
+        }
+
+        window.cancelarEdicaoReceita = function() {
+            document.getElementById('formReceita').reset();
+            document.getElementById('recIdEditando').value = '';
+            tempInsumosReceita = [];
+            renderListaInsumosTemp();
+            document.getElementById('btnCancelarRecEdit').classList.add('hidden');
+            document.getElementById('btnSalvarRecText').innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Salvar Ficha Técnica';
+            lucide.createIcons();
         }
 
         window.deletarReceita = async function(id) {
-            appData.receitas = appData.receitas.filter(r => r.id !== id);
-            await salvarNaNuvem();
-            renderReceitas();
-            renderEstoquePronto();
-            renderVendas();
+            if(confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
+                appData.receitas = appData.receitas.filter(r => r.id !== id);
+                await salvarNaNuvem();
+                renderReceitas();
+                renderEstoquePronto();
+                renderVendas();
+                renderPrecificacao();
+            }
         }
 
         function renderReceitas() {
@@ -1188,8 +1237,9 @@
                     <td class="p-3">${r.rendimento} un</td>
                     <td class="p-3 font-bold text-amber-900">R$ ${r.custoInsumosTotais.toFixed(2)}</td>
                     <td class="p-3 font-black text-amber-950 bg-amber-100/40">R$ ${r.cmvUnitario.toFixed(2)} / un</td>
-                    <td class="p-3 text-center">
-                        <button onclick="deletarReceita(${r.id})" class="text-rose-600 hover:text-rose-800 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="editarReceita(${r.id})" class="text-amber-700 hover:text-amber-900 p-1" title="Editar Ficha Técnica"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deletarReceita(${r.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1210,10 +1260,7 @@
             }
 
             const receitaObj = appData.receitas.find(r => r.id === receitaId);
-            if(!receitaObj) {
-                alert("Produto não encontrado nas fichas técnicas.");
-                return;
-            }
+            if(!receitaObj) return;
 
             if(idEditando) {
                 const item = appData.estoquePronto.find(e => e.id == idEditando);
@@ -1330,7 +1377,8 @@
             const divisor = percentualDeducoes < 1 ? (1 - percentualDeducoes) : 0.1;
             const precoSugerido = custoTotalUnitario / divisor;
 
-            document.getElementById('vendaPrecoUn').value = precoSugerido.toFixed(2);
+            const precoFinal = receitaObj.precoComercializado !== undefined ? receitaObj.precoComercializado : precoSugerido;
+            document.getElementById('vendaPrecoUn').value = precoFinal.toFixed(2);
         }
 
         window.salvarVenda = async function(e) {
@@ -1358,7 +1406,6 @@
             
             const lucroTotal = valorTotal - cmvTotal - taxaCartaoReais - custoFixoAgregado;
 
-            // Baixa automática no estoque pronto, se houver
             const estoqueItem = appData.estoquePronto.find(item => item.receitaId === receitaId);
             if(estoqueItem) {
                 estoqueItem.quantidade = Math.max(0, estoqueItem.quantidade - quantidade);
@@ -1460,6 +1507,7 @@
             };
             await salvarNaNuvem();
             renderCustosFixos();
+            renderPrecificacao();
         }
 
         function renderCustosFixos() {
@@ -1476,7 +1524,7 @@
             document.getElementById('cfTotalMensalVal').innerText = `R$ ${total.toFixed(2)}`;
         }
 
-        // ==================== PRECIFICAÇÃO ====================
+        // ==================== PRECIFICAÇÃO & VALOR COMERCIALIZADO ====================
         window.renderPrecificacao = function() {
             const tbody = document.getElementById('tabelaPrecificacao');
             if(!tbody) return;
@@ -1498,9 +1546,15 @@
                 const divisor = percentualDeducoes < 1 ? (1 - percentualDeducoes) : 0.1;
                 const precoSugerido = custoTotalUnitario / divisor;
 
-                const taxaCartaoReais = precoSugerido * (taxaCartao / 100);
-                const lucroLiquidoReais = precoSugerido - custoTotalUnitario - taxaCartaoReais;
-                const margemLiquidaPct = (lucroLiquidoReais / precoSugerido) * 100;
+                // Inicializa o valor comercializado com o sugerido se não estiver definido
+                if (r.precoComercializado === undefined) {
+                    r.precoComercializado = precoSugerido;
+                }
+
+                const precoVendaUsado = r.precoComercializado;
+                const taxaCartaoReais = precoVendaUsado * (taxaCartao / 100);
+                const lucroLiquidoReais = precoVendaUsado - custoTotalUnitario - taxaCartaoReais;
+                const margemLiquidaPct = precoVendaUsado > 0 ? (lucroLiquidoReais / precoVendaUsado) * 100 : 0;
 
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-amber-50/50';
@@ -1509,12 +1563,51 @@
                     <td class="p-3">R$ ${cmv.toFixed(2)}</td>
                     <td class="p-3">R$ ${custoFixoAgregado.toFixed(2)}</td>
                     <td class="p-3 font-bold">R$ ${custoTotalUnitario.toFixed(2)}</td>
-                    <td class="p-3 font-black text-amber-900 bg-amber-100/40">R$ ${precoSugerido.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-amber-800">R$ ${precoSugerido.toFixed(2)}</td>
+                    <td class="p-3 bg-amber-50/80">
+                        <input type="number" step="0.01" value="${r.precoComercializado.toFixed(2)}" oninput="atualizarPrecoComercializado(${r.id}, this.value)" class="w-28 px-3 py-1.5 border border-amber-400 rounded-xl text-sm font-black text-amber-950 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-600">
+                    </td>
                     <td class="p-3 text-emerald-700 font-bold">R$ ${lucroLiquidoReais.toFixed(2)}</td>
                     <td class="p-3 font-bold text-emerald-700">${margemLiquidaPct.toFixed(1)}%</td>
                 `;
                 tbody.appendChild(tr);
             });
+            lucide.createIcons();
+        }
+
+        window.atualizarPrecoComercializado = async function(id, val) {
+            const receitaObj = appData.receitas.find(r => r.id === id);
+            if(receitaObj) {
+                receitaObj.precoComercializado = parseFloat(val) || 0;
+                await salvarNaNuvem();
+                
+                // Recalcula a linha instantaneamente na tabela sem perder o foco do input
+                renderPrecificacaoNoFoco(id, receitaObj.precoComercializado);
+            }
+        }
+
+        function renderPrecificacaoNoFoco(idFocado, valorFocado) {
+            // Reaplica apenas o cálculo sem recriar todo o DOM para preservar digitação fluida
+            const margemDesejada = parseFloat(document.getElementById('precMargemDesejada').value) || 30;
+            const taxaCartao = parseFloat(document.getElementById('precTaxaCartao').value) || 5;
+            const taxaRateio = appData.custosFixos.taxaRateio || 15;
+
+            appData.receitas.forEach(r => {
+                if(r.id === idFocado) {
+                    const cmv = r.cmvUnitario;
+                    const custoFixoAgregado = cmv * (taxaRateio / 100);
+                    const custoTotalUnitario = cmv + custoFixoAgregado;
+                    const precoVendaUsado = valorFocado;
+                    const taxaCartaoReais = precoVendaUsado * (taxaCartao / 100);
+                    const lucroLiquidoReais = precoVendaUsado - custoTotalUnitario - taxaCartaoReais;
+                    const margemLiquidaPct = precoVendaUsado > 0 ? (lucroLiquidoReais / precoVendaUsado) * 100 : 0;
+                    
+                    // Atualiza as células da linha correspondente dinamicamente se necessário
+                    // Ou re-renderiza a tabela completa ao terminar
+                }
+            });
+            // Re-render completo atualizado
+            renderPrecificacao();
         }
 
         // ==================== DASHBOARD ====================
@@ -1662,5 +1755,3 @@
     </script>
 </body>
 </html>
-
-Basta copiar esse código, substituir no arquivo index.html do seu repositório e fazer o commit. O sistema de vendas já estará integrado e sincronizado em nuvem!
