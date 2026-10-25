@@ -56,7 +56,7 @@
 </head>
 <body class="min-h-screen pb-16">
 
-    <!-- ==================== TELA DE LOGIN / AUTENTICAÇÃO ==================== -->
+    <!-- ==================== TELA DE LOGIN / AUTENTICAÇÃO (FIREBASE AUTH) ==================== -->
     <div id="auth-screen" class="fixed inset-0 z-50 bg-[#FEF8EE] flex items-center justify-center p-4">
         <div class="bg-white max-w-md w-full p-6 sm:p-8 rounded-3xl border border-amber-200 shadow-xl space-y-6">
             <div class="text-center space-y-2">
@@ -64,11 +64,11 @@
                     <i data-lucide="chef-hat" class="w-8 h-8"></i>
                 </div>
                 <h1 class="text-2xl font-extrabold text-amber-950">Delícias do GO</h1>
-                <p id="auth-subtitle" class="text-xs sm:text-sm text-amber-800">Acesse sua conta para gerenciar custos e receitas</p>
+                <p id="auth-subtitle" class="text-xs sm:text-sm text-amber-800">Autenticação segura via Nuvem</p>
             </div>
 
             <!-- Formulário de Login -->
-            <form id="form-login" onsubmit="fazerLogin(event)" class="space-y-4">
+            <form id="form-login" onsubmit="fazerLoginFirebase(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-amber-900 mb-1">E-mail de Acesso</label>
                     <input type="email" id="login-email" required placeholder="exemplo@deliciasdogo.com" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-600">
@@ -78,10 +78,7 @@
                     <input type="password" id="login-senha" required placeholder="••••••••" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-600">
                 </div>
                 
-                <div class="flex items-center justify-between text-xs">
-                    <label class="flex items-center gap-2 cursor-pointer text-amber-900">
-                        <input type="checkbox" class="rounded border-amber-300 text-amber-700 focus:ring-amber-600"> Lembrar de mim
-                    </label>
+                <div class="flex items-center justify-end text-xs">
                     <button type="button" onclick="mostrarTelaRecuperacao()" class="font-bold text-amber-700 hover:text-amber-900 hover:underline">
                         Esqueceu a sua senha?
                     </button>
@@ -92,13 +89,13 @@
                 </button>
             </form>
 
-            <!-- Formulário de Recuperação de Senha (Oculto Inicialmente) -->
-            <form id="form-recuperacao" onsubmit="enviarRecuperacao(event)" class="space-y-4 hidden">
+            <!-- Formulário de Recuperação de Senha -->
+            <form id="form-recuperacao" onsubmit="enviarRecuperacaoFirebase(event)" class="space-y-4 hidden">
                 <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
-                    Insira seu e-mail cadastrado. Enviaremos as instruções e o código de redefinição de senha.
+                    Insira seu e-mail cadastrado. Enviaremos um link oficial de redefinição de senha com segurança.
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-amber-900 mb-1">E-mail de Recuperação</label>
+                    <label class="block text-xs font-bold text-amber-900 mb-1">E-mail Cadastrado</label>
                     <input type="email" id="rec-email" required placeholder="seu@email.com" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-600">
                 </div>
                 <div class="flex gap-2">
@@ -106,32 +103,14 @@
                         Voltar
                     </button>
                     <button type="submit" class="w-2/3 bg-ocre hover:bg-amber-700 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md">
-                        Enviar Instruções
+                        Enviar Link
                     </button>
                 </div>
-            </form>
-
-            <!-- Formulário de Atualização de Senha (Oculto Inicialmente) -->
-            <form id="form-atualizacao" onsubmit="atualizarSenha(event)" class="space-y-4 hidden">
-                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900">
-                    Insira o código enviado por e-mail e defina sua nova senha.
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 mb-1">Código de Confirmação</label>
-                    <input type="text" id="att-codigo" required placeholder="Ex: 123456" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 mb-1">Nova Senha</label>
-                    <input type="password" id="att-nova-senha" required placeholder="Mínimo 6 caracteres" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
-                </div>
-                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md">
-                    Salvar Nova Senha
-                </button>
             </form>
         </div>
     </div>
 
-    <!-- ==================== APLICATIVO PRINCIPAL (Protegido por Login) ==================== -->
+    <!-- ==================== APLICATIVO PRINCIPAL ==================== -->
     <div id="app-main-content" class="hidden">
         <!-- HEADER / BARRA SUPERIOR -->
         <header class="bg-cafe text-amber-100 shadow-md sticky top-0 z-50">
@@ -147,10 +126,10 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="hidden sm:flex items-center gap-2 text-xs bg-amber-950/60 px-3 py-1.5 rounded-full border border-amber-800">
-                        <i data-lucide="hard-drive-download" class="w-4 h-4 text-emerald-400"></i>
-                        <span>Sincronização em Nuvem Ativa</span>
+                        <i data-lucide="radio" class="w-4 h-4 text-emerald-400 animate-pulse"></i>
+                        <span>Sincronização em Tempo Real Ativa</span>
                     </div>
-                    <button onclick="fazerLogout()" title="Sair da Conta" class="bg-amber-800/80 hover:bg-rose-700 text-white p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all">
+                    <button onclick="fazerLogoutFirebase()" title="Sair da Conta" class="bg-amber-800/80 hover:bg-rose-700 text-white p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all">
                         <i data-lucide="log-out" class="w-4 h-4"></i> <span class="hidden md:inline">Sair</span>
                     </button>
                 </div>
@@ -190,19 +169,23 @@
         <!-- CONTEÚDO PRINCIPAL -->
         <main class="max-w-7xl mx-auto px-3 sm:px-4 py-5 space-y-5">
 
-            <!-- ==================== DASHBOARD & BACKUP ==================== -->
+            <!-- ==================== DASHBOARD & BACKUP (COM FILTRO DE MÊS) ==================== -->
             <section id="sec-dashboard" class="tab-content space-y-5">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-amber-200 shadow-sm">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-amber-950">Visão Geral do Negócio</h2>
-                        <p class="text-xs sm:text-sm text-amber-800">Métricas financeiras e ferramentas de segurança em tempo real.</p>
+                        <p class="text-xs sm:text-sm text-amber-800">Métricas financeiras atualizadas em tempo real.</p>
                     </div>
-                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                        <button onclick="exportarBackupJSON()" class="flex-1 sm:flex-none bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center justify-center gap-2">
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <div class="flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200 text-xs">
+                            <span class="font-bold text-amber-900">Período:</span>
+                            <input type="month" id="filtroMesDashboard" onchange="renderDashboard()" class="bg-transparent font-bold text-amber-950 focus:outline-none">
+                        </div>
+                        <button onclick="exportarBackupJSON()" class="bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-2">
                             <i data-lucide="download" class="w-4 h-4"></i> Exportar
                         </button>
-                        <button onclick="document.getElementById('importFile').click()" class="flex-1 sm:flex-none bg-ocre hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center justify-center gap-2">
-                            <i data-lucide="upload" class="w-4 h-4"></i> Importar (JSON)
+                        <button onclick="document.getElementById('importFile').click()" class="bg-ocre hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-2">
+                            <i data-lucide="upload" class="w-4 h-4"></i> Importar
                         </button>
                         <input type="file" id="importFile" accept=".json" class="hidden" onchange="importarBackupJSON(event)">
                     </div>
@@ -263,14 +246,14 @@
 
                     <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm">
                         <h3 class="font-bold text-amber-950 flex items-center gap-2 mb-3 text-sm sm:text-base">
-                            <i data-lucide="scroll-text" class="w-4 h-4 text-amber-600"></i> Resumo do Cardápio & Vendas
+                            <i data-lucide="scroll-text" class="w-4 h-4 text-amber-600"></i> Resumo do Mês Selecionado
                         </h3>
                         <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
                             <span class="text-amber-800">Fichas Técnicas Salvas</span>
                             <span id="dash-total-receitas" class="font-bold text-amber-950">0</span>
                         </div>
                         <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
-                            <span class="text-amber-800">Total Faturado em Vendas</span>
+                            <span class="text-amber-800">Faturamento no Mês</span>
                             <span id="dash-total-faturamento" class="font-bold text-emerald-700">R$ 0,00</span>
                         </div>
                     </div>
@@ -355,7 +338,7 @@
                 </div>
             </section>
 
-            <!-- ==================== FICHA TÉCNICA ==================== -->
+            <!-- ==================== FICHA TÉCNICA (COM CUSTOS DINÂMICOS) ==================== -->
             <section id="sec-receitas" class="tab-content hidden space-y-5">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
                     <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
@@ -399,7 +382,7 @@
                                         <tr>
                                             <th class="p-2.5">Ingrediente</th>
                                             <th class="p-2.5">Qtd Utilizada</th>
-                                            <th class="p-2.5">Custo Proporcional</th>
+                                            <th class="p-2.5">Custo Proporcional Atual</th>
                                             <th class="p-2.5 text-center">Remover</th>
                                         </tr>
                                     </thead>
@@ -433,7 +416,7 @@
                 <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
                     <div class="p-4 bg-amber-50 border-b border-amber-200">
                         <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
-                            <i data-lucide="book-open" class="w-4 h-4 text-amber-600"></i> Fichas Técnicas Salvas
+                            <i data-lucide="book-open" class="w-4 h-4 text-amber-600"></i> Fichas Técnicas Salvas (Atualizadas Automaticamente)
                         </h3>
                     </div>
                     <div class="overflow-x-auto">
@@ -497,7 +480,7 @@
                                 <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
                                     <th class="p-3">Produto</th>
                                     <th class="p-3">Qtd. em Estoque</th>
-                                    <th class="p-3">CMV Unitário</th>
+                                    <th class="p-3">CMV Unitário Atual</th>
                                     <th class="p-3">Custo Total Estoque</th>
                                     <th class="p-3 text-center">Ações</th>
                                 </tr>
@@ -510,7 +493,7 @@
                 </div>
             </section>
 
-            <!-- ==================== CONTROLE DE VENDAS ==================== -->
+            <!-- ==================== CONTROLE DE VENDAS (COM FILTRO DE MÊS) ==================== -->
             <section id="sec-vendas" class="tab-content hidden space-y-5">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
                     <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
@@ -548,9 +531,17 @@
                 </div>
 
                 <!-- CARDS DE RESUMO DE VENDAS -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-amber-200 shadow-sm">
+                    <h3 class="font-bold text-amber-950">Métricas do Mês Selecionado</h3>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="font-bold text-amber-900">Mês:</span>
+                        <input type="month" id="filtroMesVendas" onchange="renderVendas()" class="bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-xl font-bold text-amber-950">
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
-                        <p class="text-xs font-bold text-amber-800 uppercase">Faturamento Total</p>
+                        <p class="text-xs font-bold text-amber-800 uppercase">Faturamento no Mês</p>
                         <p id="vendasTotalFaturamento" class="text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
                     </div>
                     <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
@@ -558,7 +549,7 @@
                         <p id="vendasTotalCmv" class="text-2xl font-black text-amber-900 mt-1">R$ 0,00</p>
                     </div>
                     <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-cafe">
-                        <p class="text-xs font-bold text-amber-800 uppercase">Lucro Líquido Estimado</p>
+                        <p class="text-xs font-bold text-amber-800 uppercase">Lucro Líquido no Mês</p>
                         <p id="vendasTotalLucro" class="text-2xl font-black text-cafe mt-1">R$ 0,00</p>
                     </div>
                 </div>
@@ -566,7 +557,7 @@
                 <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
                     <div class="p-4 bg-amber-50 border-b border-amber-200">
                         <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
-                            <i data-lucide="receipt" class="w-4 h-4 text-amber-600"></i> Histórico de Vendas Realizadas
+                            <i data-lucide="receipt" class="w-4 h-4 text-amber-600"></i> Histórico de Vendas
                         </h3>
                     </div>
                     <div class="overflow-x-auto">
@@ -649,7 +640,7 @@
                 </div>
             </section>
 
-            <!-- ==================== PRECIFICAÇÃO & PROJEÇÃO FINANCEIRA DO ESTOQUE ==================== -->
+            <!-- ==================== PRECIFICAÇÃO & PROJEÇÃO COM ROI ==================== -->
             <section id="sec-precificacao" class="tab-content hidden space-y-5">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
                     <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
@@ -667,7 +658,7 @@
                     </div>
                 </div>
 
-                <!-- CARDS DE PROJEÇÃO FINANCEIRA DO ESTOQUE ATUAL COM ROI -->
+                <!-- CARDS DE PROJEÇÃO FINANCEIRA DO ESTOQUE COM ROI -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
                         <div class="flex items-center gap-2 text-amber-800 text-xs font-bold uppercase mb-1">
@@ -822,10 +813,11 @@
         </main>
     </div>
 
-    <!-- FIREBASE SDK & LÓGICA DE SINCRONIZAÇÃO EM TEMPO REAL -->
+    <!-- FIREBASE SDK & LÓGICA DE SINCRONIZAÇÃO EM TEMPO REAL E AUTH -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyBimS3lVLHas9TZt6do6-Icg7NWzfG0BSE",
@@ -837,12 +829,8 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
-
-        const USUARIOS_PADRAO = [
-            { email: "liefield@gmail.com", senhaSalva: "Meleca#25" },
-            { email: "jehpeixoto@icloud.com", senhaSalva: "Meleca#25" }
-        ];
 
         let appData = {
             insumos: [],
@@ -850,51 +838,114 @@
             estoquePronto: [],
             vendas: [],
             custosFixos: { gas: 0, energia: 0, mei: 0, proLabore: 0, outros: 0, taxaRateio: 15 },
-            precificacao: { margemDesejada: 30, taxaCartao: 5.0 },
-            usuarios: USUARIOS_PADRAO
+            precificacao: { margemDesejada: 30, taxaCartao: 5.0 }
         };
 
         let tempInsumosReceita = [];
+        let unsubscribeFirestore = null;
 
-        window.onload = async function() {
-            await carregarDaNuvem();
-            
-            if(sessionStorage.getItem('delicias_go_logged') === 'true') {
-                liberarApp();
-            }
-            
-            lucide.createIcons();
+        window.onload = function() {
+            // Inicializa inputs de mês com o mês atual (YYYY-MM)
+            const hoje = new Date();
+            const anoMes = hoje.toISOString().slice(0, 7);
+            const filtroDash = document.getElementById('filtroMesDashboard');
+            const filtroVendas = document.getElementById('filtroMesVendas');
+            if(filtroDash) filtroDash.value = anoMes;
+            if(filtroVendas) filtroVendas.value = anoMes;
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    liberarApp();
+                } else {
+                    bloquearApp();
+                }
+            });
         };
 
-        // ==================== CONTROLE DE AUTENTICAÇÃO E RECUPERAÇÃO ====================
-        window.fazerLogin = function(e) {
+        // ==================== AUTENTICAÇÃO REAL FIREBASE AUTH ====================
+        window.fazerLoginFirebase = async function(e) {
             e.preventDefault();
-            const emailInput = document.getElementById('login-email').value.trim().toLowerCase();
-            const senhaInput = document.getElementById('login-senha').value;
+            const email = document.getElementById('login-email').value.trim();
+            const senha = document.getElementById('login-senha').value;
 
-            const listaUsuarios = (appData.usuarios && appData.usuarios.length > 0) ? appData.usuarios : USUARIOS_PADRAO;
-            const usuarioValido = listaUsuarios.find(u => u.email.toLowerCase() === emailInput && u.senhaSalva === senhaInput);
-
-            if(usuarioValido) {
-                sessionStorage.setItem('delicias_go_logged', 'true');
-                sessionStorage.setItem('delicias_go_user', usuarioValido.email);
-                liberarApp();
-            } else {
-                alert("E-mail ou senha incorretos. Tente novamente ou utilize 'Esqueceu a sua senha?'.");
+            try {
+                await signInWithEmailAndPassword(auth, email, senha);
+            } catch (error) {
+                alert("Erro ao entrar: " + (error.code === 'auth/invalid-credential' ? 'E-mail ou senha incorretos.' : error.message));
             }
         }
 
-        window.fazerLogout = function() {
-            sessionStorage.removeItem('delicias_go_logged');
-            sessionStorage.removeItem('delicias_go_user');
-            document.getElementById('app-main-content').classList.add('hidden');
-            document.getElementById('auth-screen').classList.remove('hidden');
-            document.getElementById('form-login').reset();
+        window.fazerLogoutFirebase = async function() {
+            try {
+                if(unsubscribeFirestore) unsubscribeFirestore();
+                await signOut(auth);
+            } catch (error) {
+                console.error("Erro ao sair", error);
+            }
+        }
+
+        window.mostrarTelaRecuperacao = function() {
+            document.getElementById('form-login').classList.add('hidden');
+            document.getElementById('form-recuperacao').classList.remove('hidden');
+            document.getElementById('auth-subtitle').innerText = "Recuperação de Senha Oficial";
+        }
+
+        window.voltarParaLogin = function() {
+            document.getElementById('form-recuperacao').classList.add('hidden');
+            document.getElementById('form-login').classList.remove('hidden');
+            document.getElementById('auth-subtitle').innerText = "Autenticação segura via Nuvem";
+        }
+
+        window.enviarRecuperacaoFirebase = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('rec-email').value.trim();
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert(`Link de redefinição de senha enviado com sucesso para: ${email}`);
+                voltarParaLogin();
+            } catch (error) {
+                alert("Erro ao enviar e-mail de recuperação: " + error.message);
+            }
         }
 
         function liberarApp() {
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('app-main-content').classList.remove('hidden');
+            
+            // Ouvinte em Tempo Real do Firestore (onSnapshot)
+            const docRef = doc(db, "dados", "delicias_go");
+            unsubscribeFirestore = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    appData = docSnap.data();
+                    if(!appData.estoquePronto) appData.estoquePronto = [];
+                    if(!appData.vendas) appData.vendas = [];
+                    atualizarTodasAsTelas();
+                } else {
+                    // Inicializa documento vazio se não existir
+                    setDoc(docRef, appData);
+                }
+            }, (error) => {
+                console.error("Erro na sincronização em tempo real:", error);
+            });
+        }
+
+        function bloquearApp() {
+            document.getElementById('app-main-content').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('form-login').reset();
+        }
+
+        async function salvarNaNuvem() {
+            try {
+                const docRef = doc(db, "dados", "delicias_go");
+                await setDoc(docRef, appData);
+            } catch(e) {
+                console.error("Erro ao salvar na nuvem", e);
+                alert("Erro de conexão ao salvar dados na nuvem.");
+            }
+        }
+
+        function atualizarTodasAsTelas() {
             renderInsumos();
             renderReceitas();
             renderEstoquePronto();
@@ -903,122 +954,6 @@
             renderPrecificacao();
             renderDashboard();
             lucide.createIcons();
-        }
-
-        window.mostrarTelaRecuperacao = function() {
-            document.getElementById('form-login').classList.add('hidden');
-            document.getElementById('form-recuperacao').classList.remove('hidden');
-            document.getElementById('auth-subtitle').innerText = "Recuperação de Senha";
-        }
-
-        window.voltarParaLogin = function() {
-            document.getElementById('form-recuperacao').classList.add('hidden');
-            document.getElementById('form-atualizacao').classList.add('hidden');
-            document.getElementById('form-login').classList.remove('hidden');
-            document.getElementById('auth-subtitle').innerText = "Acesse sua conta para gerenciar custos e receitas";
-        }
-
-        window.enviarRecuperacao = function(e) {
-            e.preventDefault();
-            const emailRec = document.getElementById('rec-email').value.trim().toLowerCase();
-            
-            const listaUsuarios = (appData.usuarios && appData.usuarios.length > 0) ? appData.usuarios : USUARIOS_PADRAO;
-            const usuarioExiste = listaUsuarios.find(u => u.email.toLowerCase() === emailRec);
-
-            if(!usuarioExiste) {
-                alert("E-mail não encontrado na base de dados cadastrada.");
-                return;
-            }
-
-            sessionStorage.setItem('rec_email_temp', emailRec);
-            alert(`Instruções e código de recuperação enviados para: ${emailRec}\n\n[Código de Teste]: Seu código de confirmação é: 998877`);
-            
-            document.getElementById('form-recuperacao').classList.add('hidden');
-            document.getElementById('form-atualizacao').classList.remove('hidden');
-            document.getElementById('auth-subtitle').innerText = "Redefinição de Senha";
-        }
-
-        window.atualizarSenha = async function(e) {
-            e.preventDefault();
-            const codigo = document.getElementById('att-codigo').value.trim();
-            const novaSenha = document.getElementById('att-nova-senha').value;
-            const emailRec = sessionStorage.getItem('rec_email_temp');
-
-            if(codigo !== "998877" && codigo !== "123456") {
-                alert("Código de confirmação inválido!");
-                return;
-            }
-
-            if(novaSenha.length < 6) {
-                alert("A nova senha precisa ter pelo menos 6 caracteres.");
-                return;
-            }
-
-            if(!appData.usuarios) appData.usuarios = [...USUARIOS_PADRAO];
-
-            const idx = appData.usuarios.findIndex(u => u.email.toLowerCase() === emailRec);
-            if(idx !== -1) {
-                appData.usuarios[idx].senhaSalva = novaSenha;
-            } else {
-                appData.usuarios.push({ email: emailRec, senhaSalva: novaSenha });
-            }
-
-            await salvarNaNuvem();
-            alert("Senha atualizada com sucesso! Faça o login com sua nova senha.");
-            document.getElementById('form-atualizacao').reset();
-            voltarParaLogin();
-        }
-
-        async function carregarDaNuvem() {
-            try {
-                const docRef = doc(db, "dados", "delicias_go");
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    appData = docSnap.data();
-                    if(!appData.estoquePronto) appData.estoquePronto = [];
-                    if(!appData.vendas) appData.vendas = [];
-                    
-                    if(!appData.usuarios || appData.usuarios.length === 0) {
-                        appData.usuarios = [...USUARIOS_PADRAO];
-                    } else {
-                        USUARIOS_PADRAO.forEach(uPadrao => {
-                            const idx = appData.usuarios.findIndex(u => u.email.toLowerCase() === uPadrao.email.toLowerCase());
-                            if(idx === -1) {
-                                appData.usuarios.push(uPadrao);
-                            } else {
-                                appData.usuarios[idx].senhaSalva = uPadrao.senhaSalva;
-                            }
-                        });
-                    }
-                } else {
-                    const savedLocal = localStorage.getItem('delicias_go_data');
-                    if (savedLocal) {
-                        appData = JSON.parse(savedLocal);
-                        if(!appData.estoquePronto) appData.estoquePronto = [];
-                        if(!appData.vendas) appData.vendas = [];
-                        if(!appData.usuarios) appData.usuarios = [...USUARIOS_PADRAO];
-                        await salvarNaNuvem();
-                    }
-                }
-            } catch(e) {
-                console.error("Erro ao carregar da nuvem, usando LocalStorage", e);
-                const saved = localStorage.getItem('delicias_go_data');
-                if (saved) {
-                    appData = JSON.parse(saved);
-                    if(!appData.estoquePronto) appData.estoquePronto = [];
-                    if(!appData.vendas) appData.vendas = [];
-                }
-            }
-        }
-
-        async function salvarNaNuvem() {
-            try {
-                localStorage.setItem('delicias_go_data', JSON.stringify(appData));
-                await setDoc(doc(db, "dados", "delicias_go"), appData);
-                renderDashboard();
-            } catch(e) {
-                console.error("Erro ao salvar na nuvem", e);
-            }
         }
 
         window.exportarBackupJSON = function() {
@@ -1043,13 +978,6 @@
                             if(!appData.estoquePronto) appData.estoquePronto = [];
                             if(!appData.vendas) appData.vendas = [];
                             await salvarNaNuvem();
-                            renderInsumos();
-                            renderReceitas();
-                            renderEstoquePronto();
-                            renderVendas();
-                            renderCustosFixos();
-                            renderPrecificacao();
-                            renderDashboard();
                             alert("Dados importados e sincronizados com sucesso!");
                         } else {
                             alert("Arquivo em formato inválido.");
@@ -1091,16 +1019,31 @@
 
             appData.insumos.push(novoInsumo);
             await salvarNaNuvem();
-            renderInsumos();
-            renderDashboard();
             document.getElementById('formInsumo').reset();
         }
 
         window.deletarInsumo = async function(id) {
-            appData.insumos = appData.insumos.filter(i => i.id !== id);
-            await salvarNaNuvem();
-            renderInsumos();
-            renderDashboard();
+            // Verificação de integridade: impede excluir insumo usado em alguma ficha técnica
+            let insumoEmUso = false;
+            let nomeInsumo = "";
+            const insumoObj = appData.insumos.find(i => i.id === id);
+            if(insumoObj) nomeInsumo = insumoObj.nome;
+
+            appData.receitas.forEach(r => {
+                if(r.insumos && r.insumos.some(i => i.insumoId === id)) {
+                    insumoEmUso = true;
+                }
+            });
+
+            if(insumoEmUso) {
+                alert(`Não é possível excluir o insumo "${nomeInsumo}" pois ele está sendo utilizado em uma ou mais Fichas Técnicas.`);
+                return;
+            }
+
+            if(confirm("Tem certeza que deseja excluir este insumo?")) {
+                appData.insumos = appData.insumos.filter(i => i.id !== id);
+                await salvarNaNuvem();
+            }
         }
 
         function renderInsumos() {
@@ -1129,12 +1072,11 @@
             if (selectInsumo) {
                 selectInsumo.innerHTML = appData.insumos.length === 0 
                     ? '<option value="">Nenhum insumo cadastrado</option>' 
-                    : appData.insumos.map(i => `<option value="${i.id}">${i.nome} (${i.categoria}) - R$ ${i.custoUnitarioBase.toFixed(4)}/${i.unidade}</option>`).join('');
+                    : '<option value="">Selecione o insumo...</option>' + appData.insumos.map(i => `<option value="${i.id}">${i.nome} (${i.categoria}) - R$ ${i.custoUnitarioBase.toFixed(4)}/${i.unidade}</option>`).join('');
             }
-            lucide.createIcons();
         }
 
-        // ==================== FICHA TÉCNICA (COM EDIÇÃO) ====================
+        // ==================== FICHA TÉCNICA (COM CUSTOS DINÂMICOS) ====================
         window.addInsumoReceita = function() {
             const select = document.getElementById('recSelectInsumo');
             const insumoId = parseInt(select.value);
@@ -1162,11 +1104,14 @@
             if(!tbody) return;
             tbody.innerHTML = '';
             tempInsumosReceita.forEach((item, index) => {
+                const insumoAtual = appData.insumos.find(i => i.id === item.insumoId);
+                const custoAtual = insumoAtual ? insumoAtual.custoUnitarioBase * item.qtd : item.custoTotal;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="p-2.5 font-medium">${item.nome} <span class="text-[11px] text-amber-700">(${item.categoria})</span></td>
                     <td class="p-2.5">${item.qtd} ${item.unidade}</td>
-                    <td class="p-2.5 font-bold">R$ ${item.custoTotal.toFixed(2)}</td>
+                    <td class="p-2.5 font-bold">R$ ${custoAtual.toFixed(2)}</td>
                     <td class="p-2.5 text-center"><button type="button" onclick="removerInsumoTemp(${index})" class="text-rose-600 font-bold p-1">✕</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -1186,10 +1131,6 @@
                 return;
             }
 
-            const custoInsumosTotais = tempInsumosReceita.reduce((acc, i) => acc + i.custoTotal, 0);
-            const custoInsumosUnitario = custoInsumosTotais / (rendimento > 0 ? rendimento : 1);
-            const cmvUnitario = custoInsumosUnitario + embalagemUn + etiquetaUn;
-
             if(idEditando) {
                 const receitaObj = appData.receitas.find(r => r.id == idEditando);
                 if(receitaObj) {
@@ -1198,23 +1139,16 @@
                     receitaObj.insumos = [...tempInsumosReceita];
                     receitaObj.embalagemUn = embalagemUn;
                     receitaObj.etiquetaUn = etiquetaUn;
-                    receitaObj.custoInsumosTotais = custoInsumosTotais;
-                    receitaObj.cmvUnitario = cmvUnitario;
                 }
             } else {
-                const novaReceita = { id: Date.now(), nome, rendimento, insumos: [...tempInsumosReceita], embalagemUn, etiquetaUn, custoInsumosTotais, cmvUnitario };
+                const novaReceita = { id: Date.now(), nome, rendimento, insumos: [...tempInsumosReceita], embalagemUn, etiquetaUn };
                 appData.receitas.push(novaReceita);
             }
 
             tempInsumosReceita = [];
             cancelarEdicaoReceita();
             await salvarNaNuvem();
-            renderReceitas();
-            renderEstoquePronto();
-            renderVendas();
-            renderPrecificacao();
-            renderDashboard();
-            alert("Ficha técnica salva e atualizada com sucesso!");
+            alert("Ficha técnica salva com sucesso!");
         }
 
         window.editarReceita = function(id) {
@@ -1232,7 +1166,6 @@
 
             document.getElementById('btnCancelarRecEdit').classList.remove('hidden');
             document.getElementById('btnSalvarRecText').innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Atualizar Ficha Técnica';
-            
             window.scrollTo({ top: 0, behavior: 'smooth' });
             lucide.createIcons();
         }
@@ -1248,15 +1181,34 @@
         }
 
         window.deletarReceita = async function(id) {
+            // Verificação de integridade: impede excluir receita com estoque pronto ativo
+            const emEstoque = appData.estoquePronto.some(e => e.receitaId === id && e.quantidade > 0);
+            if(emEstoque) {
+                alert("Não é possível excluir esta Ficha Técnica pois ainda existem unidades deste produto no Estoque Pronto.");
+                return;
+            }
+
             if(confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
                 appData.receitas = appData.receitas.filter(r => r.id !== id);
                 await salvarNaNuvem();
-                renderReceitas();
-                renderEstoquePronto();
-                renderVendas();
-                renderPrecificacao();
-                renderDashboard();
             }
+        }
+
+        function calcularCmvReceita(r) {
+            let custoInsumosTotais = 0;
+            if(r.insumos) {
+                r.insumos.forEach(i => {
+                    const insumoObj = appData.insumos.find(ins => ins.id === i.insumoId);
+                    if(insumoObj) {
+                        custoInsumosTotais += insumoObj.custoUnitarioBase * i.qtd;
+                    } else {
+                        custoInsumosTotais += i.custoTotal; // fallback caso insumo tenha sido deletado excepcionalmente
+                    }
+                });
+            }
+            const custoInsumosUnitario = custoInsumosTotais / (r.rendimento > 0 ? r.rendimento : 1);
+            const cmvUnitario = custoInsumosUnitario + (r.embalagemUn || 0) + (r.etiquetaUn || 0);
+            return { custoInsumosTotais, cmvUnitario };
         }
 
         function renderReceitas() {
@@ -1265,13 +1217,15 @@
             tbody.innerHTML = '';
 
             appData.receitas.forEach(r => {
+                const { custoInsumosTotais, cmvUnitario } = calcularCmvReceita(r);
+
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-amber-50/50';
                 tr.innerHTML = `
                     <td class="p-3 font-semibold text-amber-950">${r.nome}</td>
                     <td class="p-3">${r.rendimento} un</td>
-                    <td class="p-3 font-bold text-amber-900">R$ ${r.custoInsumosTotais.toFixed(2)}</td>
-                    <td class="p-3 font-black text-amber-950 bg-amber-100/40">R$ ${r.cmvUnitario.toFixed(2)} / un</td>
+                    <td class="p-3 font-bold text-amber-900">R$ ${custoInsumosTotais.toFixed(2)}</td>
+                    <td class="p-3 font-black text-amber-950 bg-amber-100/40">R$ ${cmvUnitario.toFixed(2)} / un</td>
                     <td class="p-3 text-center space-x-2">
                         <button onclick="editarReceita(${r.id})" class="text-amber-700 hover:text-amber-900 p-1" title="Editar Ficha Técnica"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                         <button onclick="deletarReceita(${r.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
@@ -1279,7 +1233,6 @@
                 `;
                 tbody.appendChild(tr);
             });
-            lucide.createIcons();
         }
 
         // ==================== ESTOQUE PRONTO PARA VENDA ====================
@@ -1297,14 +1250,16 @@
             const receitaObj = appData.receitas.find(r => r.id === receitaId);
             if(!receitaObj) return;
 
+            const { cmvUnitario } = calcularCmvReceita(receitaObj);
+
             if(idEditando) {
                 const item = appData.estoquePronto.find(e => e.id == idEditando);
                 if(item) {
                     item.receitaId = receitaId;
                     item.nomeProduto = receitaObj.nome;
                     item.quantidade = quantidade;
-                    item.cmvUnitario = receitaObj.cmvUnitario;
-                    item.custoTotalEstoque = quantidade * receitaObj.cmvUnitario;
+                    item.cmvUnitario = cmvUnitario;
+                    item.custoTotalEstoque = quantidade * cmvUnitario;
                 }
             } else {
                 const novoItem = {
@@ -1312,17 +1267,14 @@
                     receitaId: receitaId,
                     nomeProduto: receitaObj.nome,
                     quantidade: quantidade,
-                    cmvUnitario: receitaObj.cmvUnitario,
-                    custoTotalEstoque: quantidade * receitaObj.cmvUnitario
+                    cmvUnitario: cmvUnitario,
+                    custoTotalEstoque: quantidade * cmvUnitario
                 };
                 appData.estoquePronto.push(novoItem);
             }
 
             await salvarNaNuvem();
             cancelarEdicaoEstoque();
-            renderEstoquePronto();
-            renderPrecificacao();
-            renderDashboard();
         }
 
         window.editarEstoquePronto = function(id) {
@@ -1349,9 +1301,6 @@
             if(confirm("Tem certeza que deseja remover este item do estoque?")) {
                 appData.estoquePronto = appData.estoquePronto.filter(e => e.id !== id);
                 await salvarNaNuvem();
-                renderEstoquePronto();
-                renderPrecificacao();
-                renderDashboard();
             }
         }
 
@@ -1360,7 +1309,10 @@
             if(selectReceita) {
                 selectReceita.innerHTML = appData.receitas.length === 0
                     ? '<option value="">Nenhuma ficha técnica cadastrada</option>'
-                    : '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => `<option value="${r.id}">${r.nome} (CMV: R$ ${r.cmvUnitario.toFixed(2)})</option>`).join('');
+                    : '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => {
+                        const { cmvUnitario } = calcularCmvReceita(r);
+                        return `<option value="${r.id}">${r.nome} (CMV Atual: R$ ${cmvUnitario.toFixed(2)})</option>`;
+                    }).join('');
             }
 
             const tbody = document.getElementById('tabelaEstoquePronto');
@@ -1370,7 +1322,9 @@
             let valorGeralEstoque = 0;
 
             appData.estoquePronto.forEach(item => {
-                const custoTotal = item.quantidade * item.cmvUnitario;
+                const receitaObj = appData.receitas.find(r => r.id === item.receitaId);
+                const cmvAtual = receitaObj ? calcularCmvReceita(receitaObj).cmvUnitario : item.cmvUnitario;
+                const custoTotal = item.quantidade * cmvAtual;
                 valorGeralEstoque += custoTotal;
 
                 const tr = document.createElement('tr');
@@ -1378,7 +1332,7 @@
                 tr.innerHTML = `
                     <td class="p-3 font-semibold text-amber-950">${item.nomeProduto}</td>
                     <td class="p-3 font-bold text-amber-900">${item.quantidade} un</td>
-                    <td class="p-3">R$ ${item.cmvUnitario.toFixed(2)}</td>
+                    <td class="p-3">R$ ${cmvAtual.toFixed(2)}</td>
                     <td class="p-3 font-bold text-emerald-700">R$ ${custoTotal.toFixed(2)}</td>
                     <td class="p-3 text-center space-x-2">
                         <button onclick="editarEstoquePronto(${item.id})" class="text-amber-700 hover:text-amber-900 p-1" title="Editar"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
@@ -1389,14 +1343,10 @@
             });
 
             const valGeralEl = document.getElementById('estoqueValorTotalGeral');
-            if(valGeralEl) {
-                valGeralEl.innerText = `R$ ${valorGeralEstoque.toFixed(2)}`;
-            }
-
-            lucide.createIcons();
+            if(valGeralEl) valGeralEl.innerText = `R$ ${valorGeralEstoque.toFixed(2)}`;
         }
 
-        // ==================== CONTROLE DE VENDAS ====================
+        // ==================== CONTROLE DE VENDAS (COM FILTRO DE MÊS) ====================
         window.atualizarPrecoSugeridoVenda = function() {
             const select = document.getElementById('vendaSelectReceita');
             const receitaId = parseInt(select.value);
@@ -1409,9 +1359,9 @@
             const taxaCartao = appData.precificacao.taxaCartao || 5;
             const taxaRateio = appData.custosFixos.taxaRateio || 15;
 
-            const cmv = receitaObj.cmvUnitario;
-            const custoFixoAgregado = cmv * (taxaRateio / 100);
-            const custoTotalUnitario = cmv + custoFixoAgregado;
+            const { cmvUnitario } = calcularCmvReceita(receitaObj);
+            const custoFixoAgregado = cmvUnitario * (taxaRateio / 100);
+            const custoTotalUnitario = cmvUnitario + custoFixoAgregado;
             const percentualDeducoes = (margemDesejada + taxaCartao) / 100;
             const divisor = percentualDeducoes < 1 ? (1 - percentualDeducoes) : 0.1;
             const precoSugerido = custoTotalUnitario / divisor;
@@ -1435,7 +1385,8 @@
             const receitaObj = appData.receitas.find(r => r.id === receitaId);
             if(!receitaObj) return;
 
-            const cmvTotal = receitaObj.cmvUnitario * quantidade;
+            const { cmvUnitario } = calcularCmvReceita(receitaObj);
+            const cmvTotal = cmvUnitario * quantidade;
             const valorTotal = precoUnitario * quantidade;
 
             const taxaCartaoPct = (appData.precificacao.taxaCartao || 5) / 100;
@@ -1448,13 +1399,18 @@
             const estoqueItem = appData.estoquePronto.find(item => item.receitaId === receitaId);
             if(estoqueItem) {
                 estoqueItem.quantidade = Math.max(0, estoqueItem.quantidade - quantidade);
-                estoqueItem.custoTotalEstoque = estoqueItem.quantidade * estoqueItem.cmvUnitario;
+                estoqueItem.custoTotalEstoque = estoqueItem.quantidade * cmvUnitario;
                 appData.estoquePronto = appData.estoquePronto.filter(item => item.quantidade > 0);
             }
 
+            const agora = new Date();
+            const anoMesStr = agora.toISOString().slice(0, 7); // YYYY-MM para filtro
+
             const novaVenda = {
                 id: Date.now(),
-                data: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+                dataIso: agora.toISOString(), // Para filtragem precisa por mês
+                dataStr: agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+                anoMes: anoMesStr,
                 receitaId,
                 nomeProduto: receitaObj.nome,
                 quantidade,
@@ -1467,10 +1423,6 @@
 
             appData.vendas.push(novaVenda);
             await salvarNaNuvem();
-            renderVendas();
-            renderEstoquePronto();
-            renderPrecificacao();
-            renderDashboard();
             document.getElementById('formVenda').reset();
             document.getElementById('vendaQtd').value = "1";
             alert("Venda registrada com sucesso e estoque atualizado!");
@@ -1480,8 +1432,6 @@
             if(confirm("Tem certeza que deseja excluir esta venda?")) {
                 appData.vendas = appData.vendas.filter(v => v.id !== id);
                 await salvarNaNuvem();
-                renderVendas();
-                renderDashboard();
             }
         }
 
@@ -1490,9 +1440,13 @@
             if(selectReceita) {
                 selectReceita.innerHTML = appData.receitas.length === 0
                     ? '<option value="">Nenhuma ficha técnica cadastrada</option>'
-                    : '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => `<option value="${r.id}">${r.nome} (CMV: R$ ${r.cmvUnitario.toFixed(2)})</option>`).join('');
+                    : '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => {
+                        const { cmvUnitario } = calcularCmvReceita(r);
+                        return `<option value="${r.id}">${r.nome} (CMV: R$ ${cmvUnitario.toFixed(2)})</option>`;
+                    }).join('');
             }
 
+            const filtroMes = document.getElementById('filtroMesVendas').value; // YYYY-MM
             const tbody = document.getElementById('tabelaVendas');
             if(!tbody) return;
             tbody.innerHTML = '';
@@ -1501,7 +1455,12 @@
             let totalCmv = 0;
             let totalLucro = 0;
 
-            appData.vendas.forEach(v => {
+            const vendasFiltradas = appData.vendas.filter(v => {
+                if(!v.anoMes) return true; // compatibilidade retroativa
+                return v.anoMes === filtroMes;
+            });
+
+            vendasFiltradas.forEach(v => {
                 totalFaturamento += v.valorTotal;
                 totalCmv += v.cmvTotal;
                 totalLucro += v.lucroTotal;
@@ -1509,7 +1468,7 @@
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-amber-50/50';
                 tr.innerHTML = `
-                    <td class="p-3 text-amber-900">${v.data}</td>
+                    <td class="p-3 text-amber-900">${v.dataStr || v.data}</td>
                     <td class="p-3 font-semibold text-amber-950">${v.nomeProduto}</td>
                     <td class="p-3 font-bold">${v.quantidade} un</td>
                     <td class="p-3">R$ ${v.precoUnitario.toFixed(2)}</td>
@@ -1526,14 +1485,10 @@
             const fatEl = document.getElementById('vendasTotalFaturamento');
             const cmvEl = document.getElementById('vendasTotalCmv');
             const lucEl = document.getElementById('vendasTotalLucro');
-            const dashFatEl = document.getElementById('dash-total-faturamento');
 
             if(fatEl) fatEl.innerText = `R$ ${totalFaturamento.toFixed(2)}`;
             if(cmvEl) cmvEl.innerText = `R$ ${totalCmv.toFixed(2)}`;
             if(lucEl) lucEl.innerText = `R$ ${totalLucro.toFixed(2)}`;
-            if(dashFatEl) dashFatEl.innerText = `R$ ${totalFaturamento.toFixed(2)}`;
-
-            lucide.createIcons();
         }
 
         // ==================== CUSTOS FIXOS ====================
@@ -1548,9 +1503,6 @@
                 taxaRateio: parseFloat(document.getElementById('cfTaxaRateio').value) || 15
             };
             await salvarNaNuvem();
-            renderCustosFixos();
-            renderPrecificacao();
-            renderDashboard();
         }
 
         function renderCustosFixos() {
@@ -1563,11 +1515,12 @@
             document.getElementById('cfOutros').value = cf.outros || '';
             document.getElementById('cfTaxaRateio').value = cf.taxaRateio || 15;
 
-            const total = cf.gas + cf.energia + cf.mei + cf.proLabore + cf.outros;
-            document.getElementById('cfTotalMensalVal').innerText = `R$ ${total.toFixed(2)}`;
+            const total = (cf.gas || 0) + (cf.energia || 0) + (cf.mei || 0) + (cf.proLabore || 0) + (cf.outros || 0);
+            const totalValEl = document.getElementById('cfTotalMensalVal');
+            if(totalValEl) totalValEl.innerText = `R$ ${total.toFixed(2)}`;
         }
 
-        // ==================== PRECIFICAÇÃO & PROJEÇÃO FINANCEIRA DO ESTOQUE COM ROI ====================
+        // ==================== PRECIFICAÇÃO & PROJEÇÃO COM ROI ====================
         window.renderPrecificacao = function() {
             const tbody = document.getElementById('tabelaPrecificacao');
             if(!tbody) return;
@@ -1585,9 +1538,9 @@
             let totalLucroProjetadoEstoque = 0;
 
             appData.receitas.forEach(r => {
-                const cmv = r.cmvUnitario;
-                const custoFixoAgregado = cmv * (taxaRateio / 100);
-                const custoTotalUnitario = cmv + custoFixoAgregado;
+                const { cmvUnitario } = calcularCmvReceita(r);
+                const custoFixoAgregado = cmvUnitario * (taxaRateio / 100);
+                const custoTotalUnitario = cmvUnitario + custoFixoAgregado;
 
                 const percentualDeducoes = (margemDesejada + taxaCartao) / 100;
                 const divisor = percentualDeducoes < 1 ? (1 - percentualDeducoes) : 0.1;
@@ -1605,7 +1558,7 @@
                 const itemEstoque = appData.estoquePronto.find(item => item.receitaId === r.id);
                 if (itemEstoque && itemEstoque.quantidade > 0) {
                     const qtdEstoque = itemEstoque.quantidade;
-                    totalCmvEstoqueAtual += cmv * qtdEstoque;
+                    totalCmvEstoqueAtual += cmvUnitario * qtdEstoque;
                     totalFaturamentoProjetadoEstoque += precoVendaUsado * qtdEstoque;
                     totalLucroProjetadoEstoque += lucroLiquidoReais * qtdEstoque;
                 }
@@ -1614,7 +1567,7 @@
                 tr.className = 'hover:bg-amber-50/50';
                 tr.innerHTML = `
                     <td class="p-3 font-semibold text-amber-950">${r.nome}</td>
-                    <td class="p-3">R$ ${cmv.toFixed(2)}</td>
+                    <td class="p-3">R$ ${cmvUnitario.toFixed(2)}</td>
                     <td class="p-3">R$ ${custoFixoAgregado.toFixed(2)}</td>
                     <td class="p-3 font-bold">R$ ${custoTotalUnitario.toFixed(2)}</td>
                     <td class="p-3 font-bold text-amber-800">R$ ${precoSugerido.toFixed(2)}</td>
@@ -1627,16 +1580,12 @@
                 tbody.appendChild(tr);
             });
 
-            // Cálculo do Retorno Sobre o Investimento (ROI) em porcentagem
             const roiEstoque = totalCmvEstoqueAtual > 0 ? (totalLucroProjetadoEstoque / totalCmvEstoqueAtual) * 100 : 0;
 
-            // Atualiza os cards de projeção financeira do estoque
             document.getElementById('projCmvEstoque').innerText = `R$ ${totalCmvEstoqueAtual.toFixed(2)}`;
             document.getElementById('projFaturamentoEstoque').innerText = `R$ ${totalFaturamentoProjetadoEstoque.toFixed(2)}`;
             document.getElementById('projLucroEstoque').innerText = `R$ ${totalLucroProjetadoEstoque.toFixed(2)}`;
             document.getElementById('projRoiEstoque').innerText = `${roiEstoque.toFixed(1)}%`;
-
-            lucide.createIcons();
         }
 
         window.atualizarPrecoComercializado = async function(id, val) {
@@ -1644,76 +1593,65 @@
             if(receitaObj) {
                 receitaObj.precoComercializado = parseFloat(val) || 0;
                 await salvarNaNuvem();
-                renderPrecificacao();
             }
         }
 
-        // ==================== DASHBOARD EM TEMPO REAL ====================
+        // ==================== DASHBOARD EM TEMPO REAL COM FILTRO DE MÊS ====================
         function renderDashboard() {
-            // 1. Total de Insumos
             const totalInsumosEl = document.getElementById('dash-total-insumos');
             if(totalInsumosEl) totalInsumosEl.innerText = appData.insumos.length;
 
-            // 2. Categorias Ativas
             const categoriasUnicas = new Set(appData.insumos.map(i => i.categoria));
             const catAtivasEl = document.getElementById('dash-categorias-ativas');
             if(catAtivasEl) catAtivasEl.innerText = categoriasUnicas.size;
 
-            // 3. Fichas Técnicas Salvas
             const totalReceitasEl = document.getElementById('dash-total-receitas');
             if(totalReceitasEl) totalReceitasEl.innerText = appData.receitas.length;
 
-            // 4. Total Faturado em Vendas
-            let totalFaturamento = 0;
+            // Filtro de mês no Dashboard
+            const filtroMes = document.getElementById('filtroMesDashboard').value; // YYYY-MM
+            let faturamentoMes = 0;
             if(appData.vendas && appData.vendas.length > 0) {
-                totalFaturamento = appData.vendas.reduce((acc, v) => acc + v.valorTotal, 0);
+                faturamentoMes = appData.vendas
+                    .filter(v => !v.anoMes || v.anoMes === filtroMes)
+                    .reduce((acc, v) => acc + v.valorTotal, 0);
             }
             const totalFatEl = document.getElementById('dash-total-faturamento');
-            if(totalFatEl) totalFatEl.innerText = `R$ ${totalFaturamento.toFixed(2)}`;
+            if(totalFatEl) totalFatEl.innerText = `R$ ${faturamentoMes.toFixed(2)}`;
 
-            // 5. Custos Fixos Totais
             const cf = appData.custosFixos;
             const custoFixoTotal = (cf.gas || 0) + (cf.energia || 0) + (cf.mei || 0) + (cf.proLabore || 0) + (cf.outros || 0);
 
             if(appData.receitas.length === 0) {
-                const mNome = document.getElementById('dash-maior-margem-nome');
-                const mVal = document.getElementById('dash-maior-margem-val');
-                const cNome = document.getElementById('dash-menor-custo-nome');
-                const cVal = document.getElementById('dash-menor-custo-val');
-                const pEq = document.getElementById('dash-ponto-equilibrio');
-                
-                if(mNome) mNome.innerText = "Sem receitas";
-                if(mVal) mVal.innerText = "0.0%";
-                if(cNome) cNome.innerText = "Sem receitas";
-                if(cVal) cVal.innerText = "R$ 0,00";
-                if(pEq) pEq.innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+                document.getElementById('dash-maior-margem-nome').innerText = "Sem receitas";
+                document.getElementById('dash-menor-custo-nome').innerText = "Sem receitas";
+                document.getElementById('dash-ponto-equilibrio').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
                 return;
             }
 
-            // 6. Mais Econômico (Menor CMV)
-            let menorCustoRec = appData.receitas.reduce((prev, curr) => prev.cmvUnitario < curr.cmvUnitario ? prev : curr);
-            const menorCustoNomeEl = document.getElementById('dash-menor-custo-nome');
-            const menorCustoValEl = document.getElementById('dash-menor-custo-val');
-            if(menorCustoNomeEl) menorCustoNomeEl.innerText = menorCustoRec.nome;
-            if(menorCustoValEl) menorCustoValEl.innerText = `R$ ${menorCustoRec.cmvUnitario.toFixed(2)} / un`;
+            // Produto mais econômico baseado no CMV atualizado
+            let menorCustoRec = appData.receitas[0];
+            let menorCmvVal = calcularCmvReceita(menorCustoRec).cmvUnitario;
 
-            // 7. Maior Margem
+            appData.receitas.forEach(r => {
+                const cmv = calcularCmvReceita(r).cmvUnitario;
+                if(cmv < menorCmvVal) {
+                    menorCmvVal = cmv;
+                    menorCustoRec = r;
+                }
+            });
+
+            document.getElementById('dash-menor-custo-nome').innerText = menorCustoRec.nome;
+            document.getElementById('dash-menor-custo-val').innerText = `R$ ${menorCmvVal.toFixed(2)} / un`;
+
             const margemDesejada = appData.precificacao.margemDesejada || 30;
-            const maiorMargemNomeEl = document.getElementById('dash-maior-margem-nome');
-            const maiorMargemValEl = document.getElementById('dash-maior-margem-val');
-            if(maiorMargemNomeEl) maiorMargemNomeEl.innerText = appData.receitas[0].nome;
-            if(maiorMargemValEl) maiorMargemValEl.innerText = `${margemDesejada.toFixed(1)}%`;
+            document.getElementById('dash-maior-margem-nome').innerText = appData.receitas[0].nome;
+            document.getElementById('dash-maior-margem-val').innerText = `${margemDesejada.toFixed(1)}%`;
 
-            // 8. Ponto de Equilíbrio
-            const pontoEqEl = document.getElementById('dash-ponto-equilibrio');
-            const pontoEqUnEl = document.getElementById('dash-ponto-equilibrio-un');
-            if(pontoEqEl) pontoEqEl.innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
-            
-            const cmvMedio = appData.receitas.reduce((acc, r) => acc + r.cmvUnitario, 0) / appData.receitas.length;
+            document.getElementById('dash-ponto-equilibrio').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+            const cmvMedio = appData.receitas.reduce((acc, r) => acc + calcularCmvReceita(r).cmvUnitario, 0) / appData.receitas.length;
             const unidadesPe = cmvMedio > 0 ? Math.ceil(custoFixoTotal / (cmvMedio * 0.3)) : 0;
-            if(pontoEqUnEl) pontoEqUnEl.innerText = `Equivalente a aprox. ${unidadesPe} unidades/mês`;
-
-            lucide.createIcons();
+            document.getElementById('dash-ponto-equilibrio-un').innerText = `Equivalente a aprox. ${unidadesPe} unidades/mês`;
         }
 
         // ==================== GESTÃO DE FRETE ====================
