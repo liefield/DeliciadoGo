@@ -195,7 +195,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-amber-200 shadow-sm">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-amber-950">Visão Geral do Negócio</h2>
-                        <p class="text-xs sm:text-sm text-amber-800">Métricas financeiras e ferramentas de segurança.</p>
+                        <p class="text-xs sm:text-sm text-amber-800">Métricas financeiras e ferramentas de segurança em tempo real.</p>
                     </div>
                     <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                         <button onclick="exportarBackupJSON()" class="flex-1 sm:flex-none bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center justify-center gap-2">
@@ -1092,6 +1092,7 @@
             appData.insumos.push(novoInsumo);
             await salvarNaNuvem();
             renderInsumos();
+            renderDashboard();
             document.getElementById('formInsumo').reset();
         }
 
@@ -1099,6 +1100,7 @@
             appData.insumos = appData.insumos.filter(i => i.id !== id);
             await salvarNaNuvem();
             renderInsumos();
+            renderDashboard();
         }
 
         function renderInsumos() {
@@ -1211,6 +1213,7 @@
             renderEstoquePronto();
             renderVendas();
             renderPrecificacao();
+            renderDashboard();
             alert("Ficha técnica salva e atualizada com sucesso!");
         }
 
@@ -1252,6 +1255,7 @@
                 renderEstoquePronto();
                 renderVendas();
                 renderPrecificacao();
+                renderDashboard();
             }
         }
 
@@ -1318,6 +1322,7 @@
             cancelarEdicaoEstoque();
             renderEstoquePronto();
             renderPrecificacao();
+            renderDashboard();
         }
 
         window.editarEstoquePronto = function(id) {
@@ -1346,6 +1351,7 @@
                 await salvarNaNuvem();
                 renderEstoquePronto();
                 renderPrecificacao();
+                renderDashboard();
             }
         }
 
@@ -1464,6 +1470,7 @@
             renderVendas();
             renderEstoquePronto();
             renderPrecificacao();
+            renderDashboard();
             document.getElementById('formVenda').reset();
             document.getElementById('vendaQtd').value = "1";
             alert("Venda registrada com sucesso e estoque atualizado!");
@@ -1474,6 +1481,7 @@
                 appData.vendas = appData.vendas.filter(v => v.id !== id);
                 await salvarNaNuvem();
                 renderVendas();
+                renderDashboard();
             }
         }
 
@@ -1542,6 +1550,7 @@
             await salvarNaNuvem();
             renderCustosFixos();
             renderPrecificacao();
+            renderDashboard();
         }
 
         function renderCustosFixos() {
@@ -1639,42 +1648,72 @@
             }
         }
 
-        // ==================== DASHBOARD ====================
+        // ==================== DASHBOARD EM TEMPO REAL ====================
         function renderDashboard() {
-            document.getElementById('dash-total-insumos').innerText = appData.insumos.length;
+            // 1. Total de Insumos
+            const totalInsumosEl = document.getElementById('dash-total-insumos');
+            if(totalInsumosEl) totalInsumosEl.innerText = appData.insumos.length;
+
+            // 2. Categorias Ativas
             const categoriasUnicas = new Set(appData.insumos.map(i => i.categoria));
-            document.getElementById('dash-categorias-ativas').innerText = categoriasUnicas.size;
-            document.getElementById('dash-total-receitas').innerText = appData.receitas.length;
+            const catAtivasEl = document.getElementById('dash-categorias-ativas');
+            if(catAtivasEl) catAtivasEl.innerText = categoriasUnicas.size;
 
-            const cf = appData.custosFixos;
-            const custoFixoTotal = cf.gas + cf.energia + cf.mei + cf.proLabore + cf.outros;
-            document.getElementById('dash-total-custos-fixos').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+            // 3. Fichas Técnicas Salvas
+            const totalReceitasEl = document.getElementById('dash-total-receitas');
+            if(totalReceitasEl) totalReceitasEl.innerText = appData.receitas.length;
 
+            // 4. Total Faturado em Vendas
             let totalFaturamento = 0;
             if(appData.vendas && appData.vendas.length > 0) {
                 totalFaturamento = appData.vendas.reduce((acc, v) => acc + v.valorTotal, 0);
             }
-            document.getElementById('dash-total-faturamento').innerText = `R$ ${totalFaturamento.toFixed(2)}`;
+            const totalFatEl = document.getElementById('dash-total-faturamento');
+            if(totalFatEl) totalFatEl.innerText = `R$ ${totalFaturamento.toFixed(2)}`;
+
+            // 5. Custos Fixos Totais
+            const cf = appData.custosFixos;
+            const custoFixoTotal = (cf.gas || 0) + (cf.energia || 0) + (cf.mei || 0) + (cf.proLabore || 0) + (cf.outros || 0);
 
             if(appData.receitas.length === 0) {
-                document.getElementById('dash-maior-margem-nome').innerText = "Sem receitas";
-                document.getElementById('dash-menor-custo-nome').innerText = "Sem receitas";
-                document.getElementById('dash-ponto-equilibrio').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+                const mNome = document.getElementById('dash-maior-margem-nome');
+                const mVal = document.getElementById('dash-maior-margem-val');
+                const cNome = document.getElementById('dash-menor-custo-nome');
+                const cVal = document.getElementById('dash-menor-custo-val');
+                const pEq = document.getElementById('dash-ponto-equilibrio');
+                
+                if(mNome) mNome.innerText = "Sem receitas";
+                if(mVal) mVal.innerText = "0.0%";
+                if(cNome) cNome.innerText = "Sem receitas";
+                if(cVal) cVal.innerText = "R$ 0,00";
+                if(pEq) pEq.innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
                 return;
             }
 
+            // 6. Mais Econômico (Menor CMV)
             let menorCustoRec = appData.receitas.reduce((prev, curr) => prev.cmvUnitario < curr.cmvUnitario ? prev : curr);
-            document.getElementById('dash-menor-custo-nome').innerText = menorCustoRec.nome;
-            document.getElementById('dash-menor-custo-val').innerText = `R$ ${menorCustoRec.cmvUnitario.toFixed(2)} / un`;
+            const menorCustoNomeEl = document.getElementById('dash-menor-custo-nome');
+            const menorCustoValEl = document.getElementById('dash-menor-custo-val');
+            if(menorCustoNomeEl) menorCustoNomeEl.innerText = menorCustoRec.nome;
+            if(menorCustoValEl) menorCustoValEl.innerText = `R$ ${menorCustoRec.cmvUnitario.toFixed(2)} / un`;
 
+            // 7. Maior Margem
             const margemDesejada = appData.precificacao.margemDesejada || 30;
-            document.getElementById('dash-maior-margem-nome').innerText = appData.receitas[0].nome;
-            document.getElementById('dash-maior-margem-val').innerText = `${margemDesejada.toFixed(1)}%`;
+            const maiorMargemNomeEl = document.getElementById('dash-maior-margem-nome');
+            const maiorMargemValEl = document.getElementById('dash-maior-margem-val');
+            if(maiorMargemNomeEl) maiorMargemNomeEl.innerText = appData.receitas[0].nome;
+            if(maiorMargemValEl) maiorMargemValEl.innerText = `${margemDesejada.toFixed(1)}%`;
 
-            document.getElementById('dash-ponto-equilibrio').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+            // 8. Ponto de Equilíbrio
+            const pontoEqEl = document.getElementById('dash-ponto-equilibrio');
+            const pontoEqUnEl = document.getElementById('dash-ponto-equilibrio-un');
+            if(pontoEqEl) pontoEqEl.innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+            
             const cmvMedio = appData.receitas.reduce((acc, r) => acc + r.cmvUnitario, 0) / appData.receitas.length;
-            const unidadesPe = cmvMedio > 0 ? Math.ceil(custoFixoTotal / (cmvMedio * 2)) : 0;
-            document.getElementById('dash-ponto-equilibrio-un').innerText = `Aprox. ${unidadesPe} unidades/mês`;
+            const unidadesPe = cmvMedio > 0 ? Math.ceil(custoFixoTotal / (cmvMedio * 0.3)) : 0;
+            if(pontoEqUnEl) pontoEqUnEl.innerText = `Equivalente a aprox. ${unidadesPe} unidades/mês`;
+
+            lucide.createIcons();
         }
 
         // ==================== GESTÃO DE FRETE ====================
