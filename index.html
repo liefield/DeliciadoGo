@@ -175,6 +175,9 @@
                 <button onclick="switchTab('vendas')" id="tab-vendas" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
                     <i data-lucide="shopping-cart" class="w-4 h-4"></i> Controle de Vendas
                 </button>
+                <button onclick="switchTab('trafego')" id="tab-trafego" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="megaphone" class="w-4 h-4"></i> Tráfego Pago & Mídia
+                </button>
                 <button onclick="switchTab('custosFixos')" id="tab-custosFixos" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
                     <i data-lucide="calculator" class="w-4 h-4"></i> Custos Fixos
                 </button>
@@ -603,6 +606,125 @@
                 </div>
             </section>
 
+            <!-- ==================== TRÁFEGO PAGO & MÍDIA (NOVA ABA) ==================== -->
+            <section id="sec-trafego" class="tab-content hidden space-y-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-amber-200 shadow-sm">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-amber-950 flex items-center gap-2">
+                            <i data-lucide="megaphone" class="w-6 h-6 text-amber-600"></i> Gestão de Tráfego Pago & Mídia
+                        </h2>
+                        <p class="text-xs sm:text-sm text-amber-800">Acompanhamento de anúncios do Instagram para o WhatsApp Business.</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs bg-amber-50 px-3 py-2 rounded-xl border border-amber-200">
+                        <span class="font-bold text-amber-900">Mês de Análise:</span>
+                        <input type="month" id="filtroMesTrafego" onchange="renderTrafego()" class="bg-transparent font-bold text-amber-950 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- CARDS DE MÉTRICAS DE TRÁFEGO -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <p class="text-[11px] font-bold text-amber-800 uppercase">Investimento em Ads</p>
+                        <p id="trafegoTotalInv" class="text-xl sm:text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-indigo-600">
+                        <p class="text-[11px] font-bold text-indigo-800 uppercase">Leads (Zap Business)</p>
+                        <p id="trafegoTotalLeads" class="text-xl sm:text-2xl font-black text-indigo-700 mt-1">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-rose-600">
+                        <p class="text-[11px] font-bold text-rose-800 uppercase">Custo por Lead (CPL)</p>
+                        <p id="trafegoCplMedio" class="text-xl sm:text-2xl font-black text-rose-700 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <p class="text-[11px] font-bold text-emerald-800 uppercase">Vendas Geradas</p>
+                        <p id="trafegoTotalVendas" class="text-xl sm:text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-cafe">
+                        <p class="text-[11px] font-bold text-amber-900 uppercase">ROAS (Retorno Ads)</p>
+                        <p id="trafegoRoas" class="text-xl sm:text-2xl font-black text-cafe mt-1">0.0x</p>
+                    </div>
+                </div>
+
+                <!-- FORMULÁRIO DE CADASTRO DE CAMPANHA -->
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <h3 class="font-bold text-amber-950 mb-3 flex items-center gap-2 text-sm sm:text-base">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-amber-600"></i> Registrar / Atualizar Campanha de Anúncios
+                    </h3>
+                    <form id="formTrafego" onsubmit="salvarCampanhaTrafego(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5 items-end">
+                        <input type="hidden" id="trafegoIdEditando">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Nome da Campanha / Criativo</label>
+                            <input type="text" id="trafegoNome" required placeholder="Ex: Empadão Gourmet - Meta Ads" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Investimento Total (R$)</label>
+                            <input type="number" step="0.01" id="trafegoInvestimento" required placeholder="0,00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Leads (Cliques no WhatsApp)</label>
+                            <input type="number" id="trafegoLeads" required placeholder="Ex: 45" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Vendas Fechadas (R$)</label>
+                            <input type="number" step="0.01" id="trafegoVendas" required placeholder="Ex: 350,00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="w-full bg-ocre hover:bg-amber-700 text-white font-bold px-5 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SUGESTÕES INTELIGENTES E INSIGHTS -->
+                <div class="bg-gradient-to-br from-amber-50 to-amber-100/60 p-5 rounded-2xl border border-amber-300 shadow-sm space-y-3">
+                    <h3 class="font-extrabold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                        <i data-lucide="lightbulb" class="w-5 h-5 text-amber-600"></i> Sugestões & Insights de Otimização (WhatsApp & Instagram)
+                    </h3>
+                    <div id="trafegoInsightsContainer" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs sm:text-sm text-amber-900">
+                        <div class="bg-white p-3.5 rounded-xl border border-amber-200 shadow-sm space-y-1">
+                            <span class="font-bold text-amber-950 flex items-center gap-1.5"><i data-lucide="target" class="w-4 h-4 text-emerald-600"></i> Meta de Custo por Lead (CPL)</span>
+                            <p id="insightCplText" class="text-amber-800">O CPL ideal para delivery artesanal deve ficar abaixo de R$ 3,50 por conversa iniciada no WhatsApp.</p>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-xl border border-amber-200 shadow-sm space-y-1">
+                            <span class="font-bold text-amber-950 flex items-center gap-1.5"><i data-lucide="trending-up" class="w-4 h-4 text-indigo-600"></i> Retorno Esperado (ROAS)</span>
+                            <p id="insightRoasText" class="text-amber-800">Busque manter um ROAS superior a 3.0x (para cada R$ 1,00 investido, retornar R$ 3,00 em vendas).</p>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-xl border border-amber-200 shadow-sm space-y-1">
+                            <span class="font-bold text-amber-950 flex items-center gap-1.5"><i data-lucide="message-square" class="w-4 h-4 text-amber-600"></i> Automação WhatsApp</span>
+                            <p class="text-amber-800">Utilize etiquetas coloridas no WhatsApp Business para identificar conversas vindas de anúncio e acelerar o fechamento.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABELA DE CAMPANHAS -->
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="list" class="w-4 h-4 text-amber-600"></i> Campanhas Registradas no Período
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Campanha / Criativo</th>
+                                    <th class="p-3">Investimento</th>
+                                    <th class="p-3">Leads (Zap)</th>
+                                    <th class="p-3">CPL</th>
+                                    <th class="p-3">Vendas Diretas</th>
+                                    <th class="p-3">ROAS</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaTrafego" class="divide-y divide-amber-100">
+                                <!-- Inserido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <!-- ==================== CUSTOS FIXOS ==================== -->
             <section id="sec-custosFixos" class="tab-content hidden space-y-5">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -834,7 +956,7 @@
         </main>
     </div>
 
-    <!-- FIRESTORE SDK E AUTENTICAÇÃO SEGURA VIA FIRESTORE EM TEMPO REAL -->
+    <!-- FIRESTORE SDK E LÓGICA DO APLICATIVO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -861,6 +983,7 @@
             receitas: [],
             estoquePronto: [],
             vendas: [],
+            campanhasTrafego: [],
             custosFixos: { gas: 0, energia: 0, mei: 0, proLabore: 0, outros: 0, taxaRateio: 15 },
             precificacao: { margemDesejada: 30, taxaCartao: 5.0 },
             usuarios: USUARIOS_PADRAO
@@ -874,17 +997,17 @@
             const anoMes = hoje.toISOString().slice(0, 7);
             const filtroDash = document.getElementById('filtroMesDashboard');
             const filtroVendas = document.getElementById('filtroMesVendas');
+            const filtroTrafego = document.getElementById('filtroMesTrafego');
             if(filtroDash) filtroDash.value = anoMes;
             if(filtroVendas) filtroVendas.value = anoMes;
+            if(filtroTrafego) filtroTrafego.value = anoMes;
 
-            // Carrega os dados iniciais do Firestore para validar login
             const docRef = doc(db, "dados", "delicias_go");
             onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     appData = docSnap.data();
-                    if(!appData.usuarios || appData.usuarios.length === 0) {
-                        appData.usuarios = [...USUARIOS_PADRAO];
-                    }
+                    if(!appData.usuarios || appData.usuarios.length === 0) appData.usuarios = [...USUARIOS_PADRAO];
+                    if(!appData.campanhasTrafego) appData.campanhasTrafego = [];
                 }
             });
 
@@ -893,7 +1016,6 @@
             }
         };
 
-        // ==================== AUTENTICAÇÃO SEGURA VIA FIRESTORE ====================
         window.fazerLogin = function(e) {
             e.preventDefault();
             const emailInput = document.getElementById('login-email').value.trim().toLowerCase();
@@ -945,7 +1067,7 @@
             }
 
             sessionStorage.setItem('rec_email_temp', emailRec);
-            alert(`Instruções e código de recuperação enviados para: ${emailRec}\n\n[Código de Teste]: Seu código de confirmação é: 998877`);
+            alert(`Instruções enviadas para: ${emailRec}\n\n[Código de Teste]: Seu código de confirmação é: 998877`);
             
             document.getElementById('form-recuperacao').classList.add('hidden');
             document.getElementById('form-atualizacao').classList.remove('hidden');
@@ -993,6 +1115,7 @@
                     appData = docSnap.data();
                     if(!appData.estoquePronto) appData.estoquePronto = [];
                     if(!appData.vendas) appData.vendas = [];
+                    if(!appData.campanhasTrafego) appData.campanhasTrafego = [];
                     if(!appData.usuarios) appData.usuarios = [...USUARIOS_PADRAO];
                     atualizarTodasAsTelas();
                 } else {
@@ -1017,6 +1140,7 @@
             renderReceitas();
             renderEstoquePronto();
             renderVendas();
+            renderTrafego();
             renderCustosFixos();
             renderPrecificacao();
             renderDashboard();
@@ -1044,6 +1168,7 @@
                             appData = parsedData;
                             if(!appData.estoquePronto) appData.estoquePronto = [];
                             if(!appData.vendas) appData.vendas = [];
+                            if(!appData.campanhasTrafego) appData.campanhasTrafego = [];
                             await salvarNaNuvem();
                             alert("Dados importados e sincronizados com sucesso!");
                         } else {
@@ -1067,6 +1192,7 @@
             if(tabId === 'precificacao') renderPrecificacao();
             if(tabId === 'estoquePronto') renderEstoquePronto();
             if(tabId === 'vendas') renderVendas();
+            if(tabId === 'trafego') renderTrafego();
         }
 
         // ==================== INSUMOS ====================
@@ -1300,7 +1426,7 @@
             });
         }
 
-        // ==================== ESTOQUE PRONTO PARA VENDA ====================
+        // ==================== ESTOQUE PRONTO ====================
         window.salvarEstoquePronto = async function(e) {
             e.preventDefault();
             const idEditando = document.getElementById('estoqueIdEditando').value;
@@ -1556,6 +1682,125 @@
             if(lucEl) lucEl.innerText = `R$ ${totalLucro.toFixed(2)}`;
         }
 
+        // ==================== TRÁFEGO PAGO & MÍDIA ====================
+        window.salvarCampanhaTrafego = async function(e) {
+            e.preventDefault();
+            const idEditando = document.getElementById('trafegoIdEditando').value;
+            const nome = document.getElementById('trafegoNome').value.trim();
+            const investimento = parseFloat(document.getElementById('trafegoInvestimento').value) || 0;
+            const leads = parseInt(document.getElementById('trafegoLeads').value) || 0;
+            const vendas = parseFloat(document.getElementById('trafegoVendas').value) || 0;
+            const mesAno = document.getElementById('filtroMesTrafego').value || new Date().toISOString().slice(0, 7);
+
+            if(!nome || investimento <= 0) {
+                alert("Preencha o nome da campanha e o investimento.");
+                return;
+            }
+
+            if(idEditando) {
+                const camp = appData.campanhasTrafego.find(c => c.id == idEditando);
+                if(camp) {
+                    camp.nome = nome;
+                    camp.investimento = investimento;
+                    camp.leads = leads;
+                    camp.vendas = vendas;
+                    camp.mesAno = mesAno;
+                }
+            } else {
+                const novaCamp = {
+                    id: Date.now(),
+                    nome,
+                    investimento,
+                    leads,
+                    vendas,
+                    mesAno
+                };
+                appData.campanhasTrafego.push(novaCamp);
+            }
+
+            document.getElementById('formTrafego').reset();
+            document.getElementById('trafegoIdEditando').value = '';
+            await salvarNaNuvem();
+            alert("Campanha de tráfego salva com sucesso!");
+        }
+
+        window.deletarCampanhaTrafego = async function(id) {
+            if(confirm("Tem certeza que deseja excluir esta campanha?")) {
+                appData.campanhasTrafego = appData.campanhasTrafego.filter(c => c.id !== id);
+                await salvarNaNuvem();
+            }
+        }
+
+        function renderTrafego() {
+            const filtroMes = document.getElementById('filtroMesTrafego').value;
+            const tbody = document.getElementById('tabelaTrafego');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let totalInv = 0;
+            let totalLeads = 0;
+            let totalVendasAds = 0;
+
+            const campanhasFiltradas = (appData.campanhasTrafego || []).filter(c => {
+                if(!c.mesAno) return true;
+                return c.mesAno === filtroMes;
+            });
+
+            campanhasFiltradas.forEach(c => {
+                totalInv += c.investimento;
+                totalLeads += c.leads;
+                totalVendasAds += c.vendas;
+
+                const cpl = c.leads > 0 ? c.investimento / c.leads : 0;
+                const roas = c.investimento > 0 ? c.vendas / c.investimento : 0;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${c.nome}</td>
+                    <td class="p-3 font-bold text-amber-900">R$ ${c.investimento.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-indigo-700">${c.leads} leads</td>
+                    <td class="p-3">R$ ${cpl.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">R$ ${c.vendas.toFixed(2)}</td>
+                    <td class="p-3 font-black ${roas >= 3 ? 'text-emerald-700' : 'text-amber-800'}">${roas.toFixed(1)}x</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deletarCampanhaTrafego(${c.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const cplGeral = totalLeads > 0 ? totalInv / totalLeads : 0;
+            const roasGeral = totalInv > 0 ? totalVendasAds / totalInv : 0;
+
+            document.getElementById('trafegoTotalInv').innerText = `R$ ${totalInv.toFixed(2)}`;
+            document.getElementById('trafegoTotalLeads').innerText = totalLeads;
+            document.getElementById('trafegoCplMedio').innerText = `R$ ${cplGeral.toFixed(2)}`;
+            document.getElementById('trafegoTotalVendas').innerText = `R$ ${totalVendasAds.toFixed(2)}`;
+            document.getElementById('trafegoRoas').innerText = `${roasGeral.toFixed(1)}x`;
+
+            // Sugestões dinâmicas baseadas no CPL e ROAS
+            const insightCpl = document.getElementById('insightCplText');
+            const insightRoas = document.getElementById('insightRoasText');
+
+            if(totalInv > 0) {
+                if(cplGeral <= 3.50) {
+                    insightCpl.innerHTML = `<span class="text-emerald-700 font-bold">Excelente!</span> Seu CPL médio de R$ ${cplGeral.toFixed(2)} está ótimo. O público e o criativo estão atraentes.`;
+                } else {
+                    insightCpl.innerHTML = `<span class="text-rose-700 font-bold">Atenção:</span> CPL em R$ ${cplGeral.toFixed(2)} (acima de R$ 3,50). Troque a imagem/vídeo do anúncio ou ajuste a segmentação geográfica em Ilha do Governador.`;
+                }
+
+                if(roasGeral >= 3.0) {
+                    insightRoas.innerHTML = `<span class="text-emerald-700 font-bold">ROAS Saudável (${roasGeral.toFixed(1)}x):</span> Cada R$ 1 investido está gerando R$ ${roasGeral.toFixed(1)} em vendas. Considere aumentar o orçamento gradualmente.`;
+                } else {
+                    insightRoas.innerHTML = `<span class="text-amber-800 font-bold">ROAS Baixo (${roasGeral.toFixed(1)}x):</span> Melhore a conversão no WhatsApp Business (copie e cole mensagens rápidas e ofereça combos).`;
+                }
+            } else {
+                insightCpl.innerText = "O CPL ideal para delivery artesanal deve ficar abaixo de R$ 3,50 por conversa iniciada no WhatsApp.";
+                insightRoas.innerText = "Busque manter um ROAS superior a 3.0x (para cada R$ 1,00 investido, retornar R$ 3,00 em vendas).";
+            }
+        }
+
         // ==================== CUSTOS FIXOS ====================
         window.salvarCustosFixos = async function(e) {
             if(e) e.preventDefault();
@@ -1661,7 +1906,7 @@
             }
         }
 
-        // ==================== DASHBOARD EM TEMPO REAL ====================
+        // ==================== DASHBOARD ====================
         function renderDashboard() {
             const totalInsumosEl = document.getElementById('dash-total-insumos');
             if(totalInsumosEl) totalInsumosEl.innerText = appData.insumos.length;
