@@ -649,7 +649,7 @@
                 </div>
             </section>
 
-            <!-- ==================== PRECIFICAÇÃO ==================== -->
+            <!-- ==================== PRECIFICAÇÃO & PROJEÇÃO DO ESTOQUE ==================== -->
             <section id="sec-precificacao" class="tab-content hidden space-y-5">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
                     <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
@@ -664,6 +664,33 @@
                             <label class="block text-xs font-bold text-amber-900 mb-1">Taxa de Cartão / Plataforma (%)</label>
                             <input type="number" step="0.1" id="precTaxaCartao" value="5.0" oninput="renderPrecificacao()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold text-amber-950 bg-amber-50/30">
                         </div>
+                    </div>
+                </div>
+
+                <!-- CARDS DE PROJEÇÃO FINANCEIRA DO ESTOQUE ATUAL -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <div class="flex items-center gap-2 text-amber-800 text-xs font-bold uppercase mb-1">
+                            <i data-lucide="package" class="w-4 h-4"></i> CMV do Estoque Atual
+                        </div>
+                        <p id="projCmvEstoque" class="text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
+                        <p class="text-[11px] text-amber-700 mt-1">Custo investido nos produtos prontos</p>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <div class="flex items-center gap-2 text-emerald-800 text-xs font-bold uppercase mb-1">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i> Projeção Faturamento Total
+                        </div>
+                        <p id="projFaturamentoEstoque" class="text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                        <p class="text-[11px] text-emerald-800 mt-1">Valor a receber ao zerar o estoque</p>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-cafe">
+                        <div class="flex items-center gap-2 text-cafe text-xs font-bold uppercase mb-1">
+                            <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i> Lucro Líquido Projetado
+                        </div>
+                        <p id="projLucroEstoque" class="text-2xl font-black text-cafe mt-1">R$ 0,00</p>
+                        <p class="text-[11px] text-amber-900 mt-1">Renda financeira líquida esperada</p>
                     </div>
                 </div>
 
@@ -804,7 +831,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Banco de usuários padrão atualizado
         const USUARIOS_PADRAO = [
             { email: "liefield@gmail.com", senhaSalva: "Meleca#25" },
             { email: "jehpeixoto@icloud.com", senhaSalva: "Meleca#25" }
@@ -1155,7 +1181,6 @@
             const cmvUnitario = custoInsumosUnitario + embalagemUn + etiquetaUn;
 
             if(idEditando) {
-                // Atualiza receita existente
                 const receitaObj = appData.receitas.find(r => r.id == idEditando);
                 if(receitaObj) {
                     receitaObj.nome = nome;
@@ -1167,7 +1192,6 @@
                     receitaObj.cmvUnitario = cmvUnitario;
                 }
             } else {
-                // Nova receita
                 const novaReceita = { id: Date.now(), nome, rendimento, insumos: [...tempInsumosReceita], embalagemUn, etiquetaUn, custoInsumosTotais, cmvUnitario };
                 appData.receitas.push(novaReceita);
             }
@@ -1198,7 +1222,6 @@
             document.getElementById('btnCancelarRecEdit').classList.remove('hidden');
             document.getElementById('btnSalvarRecText').innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Atualizar Ficha Técnica';
             
-            // Rola até o formulário
             window.scrollTo({ top: 0, behavior: 'smooth' });
             lucide.createIcons();
         }
@@ -1286,6 +1309,7 @@
             await salvarNaNuvem();
             cancelarEdicaoEstoque();
             renderEstoquePronto();
+            renderPrecificacao();
         }
 
         window.editarEstoquePronto = function(id) {
@@ -1313,6 +1337,7 @@
                 appData.estoquePronto = appData.estoquePronto.filter(e => e.id !== id);
                 await salvarNaNuvem();
                 renderEstoquePronto();
+                renderPrecificacao();
             }
         }
 
@@ -1430,6 +1455,7 @@
             await salvarNaNuvem();
             renderVendas();
             renderEstoquePronto();
+            renderPrecificacao();
             document.getElementById('formVenda').reset();
             document.getElementById('vendaQtd').value = "1";
             alert("Venda registrada com sucesso e estoque atualizado!");
@@ -1524,7 +1550,7 @@
             document.getElementById('cfTotalMensalVal').innerText = `R$ ${total.toFixed(2)}`;
         }
 
-        // ==================== PRECIFICAÇÃO & VALOR COMERCIALIZADO ====================
+        // ==================== PRECIFICAÇÃO & PROJEÇÃO FINANCEIRA DO ESTOQUE ====================
         window.renderPrecificacao = function() {
             const tbody = document.getElementById('tabelaPrecificacao');
             if(!tbody) return;
@@ -1537,6 +1563,10 @@
             appData.precificacao.margemDesejada = margemDesejada;
             appData.precificacao.taxaCartao = taxaCartao;
 
+            let totalCmvEstoqueAtual = 0;
+            let totalFaturamentoProjetadoEstoque = 0;
+            let totalLucroProjetadoEstoque = 0;
+
             appData.receitas.forEach(r => {
                 const cmv = r.cmvUnitario;
                 const custoFixoAgregado = cmv * (taxaRateio / 100);
@@ -1546,7 +1576,6 @@
                 const divisor = percentualDeducoes < 1 ? (1 - percentualDeducoes) : 0.1;
                 const precoSugerido = custoTotalUnitario / divisor;
 
-                // Inicializa o valor comercializado com o sugerido se não estiver definido
                 if (r.precoComercializado === undefined) {
                     r.precoComercializado = precoSugerido;
                 }
@@ -1555,6 +1584,15 @@
                 const taxaCartaoReais = precoVendaUsado * (taxaCartao / 100);
                 const lucroLiquidoReais = precoVendaUsado - custoTotalUnitario - taxaCartaoReais;
                 const margemLiquidaPct = precoVendaUsado > 0 ? (lucroLiquidoReais / precoVendaUsado) * 100 : 0;
+
+                // Correlaciona com os dados do Estoque Pronto
+                const itemEstoque = appData.estoquePronto.find(item => item.receitaId === r.id);
+                if (itemEstoque && itemEstoque.quantidade > 0) {
+                    const qtdEstoque = itemEstoque.quantidade;
+                    totalCmvEstoqueAtual += cmv * qtdEstoque;
+                    totalFaturamentoProjetadoEstoque += precoVendaUsado * qtdEstoque;
+                    totalLucroProjetadoEstoque += lucroLiquidoReais * qtdEstoque;
+                }
 
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-amber-50/50';
@@ -1572,6 +1610,12 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            // Atualiza os cards de projeção financeira do estoque
+            document.getElementById('projCmvEstoque').innerText = `R$ ${totalCmvEstoqueAtual.toFixed(2)}`;
+            document.getElementById('projFaturamentoEstoque').innerText = `R$ ${totalFaturamentoProjetadoEstoque.toFixed(2)}`;
+            document.getElementById('projLucroEstoque').innerText = `R$ ${totalLucroProjetadoEstoque.toFixed(2)}`;
+
             lucide.createIcons();
         }
 
@@ -1580,34 +1624,8 @@
             if(receitaObj) {
                 receitaObj.precoComercializado = parseFloat(val) || 0;
                 await salvarNaNuvem();
-                
-                // Recalcula a linha instantaneamente na tabela sem perder o foco do input
-                renderPrecificacaoNoFoco(id, receitaObj.precoComercializado);
+                renderPrecificacao();
             }
-        }
-
-        function renderPrecificacaoNoFoco(idFocado, valorFocado) {
-            // Reaplica apenas o cálculo sem recriar todo o DOM para preservar digitação fluida
-            const margemDesejada = parseFloat(document.getElementById('precMargemDesejada').value) || 30;
-            const taxaCartao = parseFloat(document.getElementById('precTaxaCartao').value) || 5;
-            const taxaRateio = appData.custosFixos.taxaRateio || 15;
-
-            appData.receitas.forEach(r => {
-                if(r.id === idFocado) {
-                    const cmv = r.cmvUnitario;
-                    const custoFixoAgregado = cmv * (taxaRateio / 100);
-                    const custoTotalUnitario = cmv + custoFixoAgregado;
-                    const precoVendaUsado = valorFocado;
-                    const taxaCartaoReais = precoVendaUsado * (taxaCartao / 100);
-                    const lucroLiquidoReais = precoVendaUsado - custoTotalUnitario - taxaCartaoReais;
-                    const margemLiquidaPct = precoVendaUsado > 0 ? (lucroLiquidoReais / precoVendaUsado) * 100 : 0;
-                    
-                    // Atualiza as células da linha correspondente dinamicamente se necessário
-                    // Ou re-renderiza a tabela completa ao terminar
-                }
-            });
-            // Re-render completo atualizado
-            renderPrecificacao();
         }
 
         // ==================== DASHBOARD ====================
