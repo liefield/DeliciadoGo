@@ -184,6 +184,12 @@
                 <button onclick="switchTab('precificacao')" id="tab-precificacao" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
                     <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i> Precificação
                 </button>
+                <button onclick="switchTab('ifood')" id="tab-ifood" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="utensils" class="w-4 h-4"></i> iFood 🍔
+                </button>
+                <button onclick="switchTab('food99')" id="tab-food99" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="car" class="w-4 h-4"></i> 99Food 🚗
+                </button>
                 <button onclick="switchTab('frete')" id="tab-frete" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
                     <i data-lucide="truck" class="w-4 h-4"></i> Frete & Subsídio
                 </button>
@@ -884,6 +890,151 @@
             </section>
 
             <!-- ==================== GESTÃO DE FRETE ==================== -->
+            <!-- ==================== iFOOD PRECIFICAÇÃO ==================== -->
+            <section id="sec-ifood" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-red-100 text-red-700 rounded-xl">
+                                <i data-lucide="utensils" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg sm:text-xl font-bold text-amber-950">Calculadora de Precificação — iFood 🍔</h2>
+                                <p class="text-xs text-amber-800">Simule o preço de venda considerando a comissão do iFood (típica de 12% a 27%) e taxa de cartão.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Selecionar Produto (Ficha Técnica)</label>
+                            <select id="ifoodSelectReceita" onchange="carregarCustosPlataforma('ifood')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <!-- Populado dinamicamente -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Comissão iFood (%)</label>
+                            <input type="number" step="0.1" id="ifoodComissao" value="23.0" oninput="calcularPrecificacaoPlataforma('ifood')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Margem de Lucro Desejada (%)</label>
+                            <input type="number" step="0.1" id="ifoodMargem" value="30.0" oninput="calcularPrecificacaoPlataforma('ifood')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <p class="text-xs font-bold text-amber-800 uppercase">CMV + Custos Totais</p>
+                        <p id="ifoodCustoTotal" class="text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-red-600">
+                        <p class="text-xs font-bold text-red-800 uppercase">Preço Sugerido iFood</p>
+                        <p id="ifoodPrecoSugerido" class="text-2xl font-black text-red-700 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <p class="text-xs font-bold text-emerald-800 uppercase">Lucro Líquido Estimado</p>
+                        <p id="ifoodLucroLiquido" class="text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 text-sm sm:text-base flex items-center gap-2">
+                            <i data-lucide="list" class="w-4 h-4 text-amber-600"></i> Tabela Geral de Precificação iFood
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">CMV Un.</th>
+                                    <th class="p-3">Comissão iFood</th>
+                                    <th class="p-3">Preço Ideal iFood</th>
+                                    <th class="p-3">Lucro Líquido</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaPrecificacaoIfood" class="divide-y divide-amber-100">
+                                <!-- Dinâmico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 99FOOD PRECIFICAÇÃO ==================== -->
+            <section id="sec-food99" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-amber-100 text-amber-700 rounded-xl">
+                                <i data-lucide="car" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg sm:text-xl font-bold text-amber-950">Calculadora de Precificação — 99Food 🚗</h2>
+                                <p class="text-xs text-amber-800">Simule o preço de venda para o 99Food com comissões mais competitivas do mercado.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Selecionar Produto (Ficha Técnica)</label>
+                            <select id="food99SelectReceita" onchange="carregarCustosPlataforma('food99')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <!-- Populado dinamicamente -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Comissão 99Food (%)</label>
+                            <input type="number" step="0.1" id="food99Comissao" value="15.0" oninput="calcularPrecificacaoPlataforma('food99')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Margem de Lucro Desejada (%)</label>
+                            <input type="number" step="0.1" id="food99Margem" value="30.0" oninput="calcularPrecificacaoPlataforma('food99')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <p class="text-xs font-bold text-amber-800 uppercase">CMV + Custos Totais</p>
+                        <p id="food99CustoTotal" class="text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-700">
+                        <p class="text-xs font-bold text-amber-900 uppercase">Preço Sugerido 99Food</p>
+                        <p id="food99PrecoSugerido" class="text-2xl font-black text-amber-900 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <p class="text-xs font-bold text-emerald-800 uppercase">Lucro Líquido Estimado</p>
+                        <p id="food99LucroLiquido" class="text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 text-sm sm:text-base flex items-center gap-2">
+                            <i data-lucide="list" class="w-4 h-4 text-amber-600"></i> Tabela Geral de Precificação 99Food
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">CMV Un.</th>
+                                    <th class="p-3">Comissão 99Food</th>
+                                    <th class="p-3">Preço Ideal 99Food</th>
+                                    <th class="p-3">Lucro Líquido</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaPrecificacaoFood99" class="divide-y divide-amber-100">
+                                <!-- Dinâmico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== FRETE ==================== -->
             <section id="sec-frete" class="tab-content hidden space-y-5">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
                     <div class="flex items-center gap-3 mb-3">
@@ -1162,7 +1313,7 @@
             renderTrafego();
             renderCustosFixos();
             renderPrecificacao();
-            renderDashboard();
+            renderDashboard(); renderTabelaPlataforma("ifood"); renderTabelaPlataforma("food99");
             lucide.createIcons();
         }
 
@@ -1207,11 +1358,11 @@
             document.getElementById(`sec-${tabId}`).classList.remove('hidden');
             document.getElementById(`tab-${tabId}`).classList.add('active-tab');
 
-            if(tabId === 'dashboard') renderDashboard();
+            if(tabId === 'dashboard') renderDashboard(); renderTabelaPlataforma("ifood"); renderTabelaPlataforma("food99");
             if(tabId === 'precificacao') renderPrecificacao();
             if(tabId === 'estoquePronto') renderEstoquePronto();
             if(tabId === 'vendas') renderVendas();
-            if(tabId === 'trafego') renderTrafego();
+            if(tabId === 'trafego') renderTrafego(); if(tabId === 'ifood') renderTabelaPlataforma("ifood"); if(tabId === 'food99') renderTabelaPlataforma("food99");
         }
 
         // ==================== INSUMOS ====================
@@ -2109,6 +2260,100 @@
 
             lucide.createIcons();
         }
+
+        window.carregarCustosPlataforma = function(platform) {
+            calcularPrecificacaoPlataforma(platform);
+        }
+
+        window.calcularPrecificacaoPlataforma = function(platform) {
+            const selectId = platform === 'ifood' ? 'ifoodSelectReceita' : 'food99SelectReceita';
+            const comissaoId = platform === 'ifood' ? 'ifoodComissao' : 'food99Comissao';
+            const margemId = platform === 'ifood' ? 'ifoodMargem' : 'food99Margem';
+
+            const custoTotalEl = platform === 'ifood' ? 'ifoodCustoTotal' : 'food99CustoTotal';
+            const precoSugeridoEl = platform === 'ifood' ? 'ifoodPrecoSugerido' : 'food99PrecoSugerido';
+            const lucroEl = platform === 'ifood' ? 'ifoodLucroLiquido' : 'food99LucroLiquido';
+
+            const select = document.getElementById(selectId);
+            if(!select || !select.value) return;
+
+            const receitaId = parseInt(select.value);
+            const receitaObj = appData.receitas.find(r => r.id === receitaId);
+            if(!receitaObj) return;
+
+            const comissaoPct = (parseFloat(document.getElementById(comissaoId).value) || 0) / 100;
+            const margemPct = (parseFloat(document.getElementById(margemId).value) || 0) / 100;
+            const taxaRateio = (appData.custosFixos.taxaRateio || 15) / 100;
+
+            const { cmvUnitario } = calcularCmvReceita(receitaObj);
+            const custoFixoAgregado = cmvUnitario * taxaRateio;
+            const custoTotal = cmvUnitario + custoFixoAgregado;
+
+            // Preço = CustoTotal / (1 - (Comissao + Margem))
+            const divisor = 1 - (comissaoPct + margemPct);
+            const precoIdeal = divisor > 0 ? custoTotal / divisor : custoTotal * 1.5;
+            const valorComissaoReais = precoIdeal * comissaoPct;
+            const lucroLiquido = precoIdeal - custoTotal - valorComissaoReais;
+
+            document.getElementById(custoTotalEl).innerText = `R$ ${custoTotal.toFixed(2)}`;
+            document.getElementById(precoSugeridoEl).innerText = `R$ ${precoIdeal.toFixed(2)}`;
+            document.getElementById(lucroEl).innerText = `R$ ${lucroLiquido.toFixed(2)}`;
+
+            renderTabelaPlataforma(platform);
+        }
+
+        function renderTabelaPlataforma(platform) {
+            const tbodyId = platform === 'ifood' ? 'tabelaPrecificacaoIfood' : 'tabelaPrecificacaoFood99';
+            const selectId = platform === 'ifood' ? 'ifoodSelectReceita' : 'food99SelectReceita';
+            const comissaoId = platform === 'ifood' ? 'ifoodComissao' : 'food99Comissao';
+            const margemId = platform === 'ifood' ? 'ifoodMargem' : 'food99Margem';
+
+            const tbody = document.getElementById(tbodyId);
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            const select = document.getElementById(selectId);
+            const currentSelected = select ? select.value : '';
+
+            if(select && appData.receitas.length > 0 && !select.innerHTML.includes('option value=')) {
+                select.innerHTML = '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => `<option value="${r.id}">${r.nome}</option>`).join('');
+                if(appData.receitas.length > 0 && !select.value) {
+                    select.value = appData.receitas[0].id;
+                }
+            }
+
+            const comissaoPct = (parseFloat(document.getElementById(comissaoId).value) || 0) / 100;
+            const margemPct = (parseFloat(document.getElementById(margemId).value) || 0) / 100;
+            const taxaRateio = (appData.custosFixos.taxaRateio || 15) / 100;
+
+            appData.receitas.forEach(r => {
+                const { cmvUnitario } = calcularCmvReceita(r);
+                const custoTotal = cmvUnitario + (cmvUnitario * taxaRateio);
+                const divisor = 1 - (comissaoPct + margemPct);
+                const precoIdeal = divisor > 0 ? custoTotal / divisor : custoTotal * 1.5;
+                const comissaoReais = precoIdeal * comissaoPct;
+                const lucroLiquido = precoIdeal - custoTotal - comissaoReais;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${r.nome}</td>
+                    <td class="p-3">R$ ${cmvUnitario.toFixed(2)}</td>
+                    <td class="p-3">R$ ${comissaoReais.toFixed(2)} (${(comissaoPct*100).toFixed(0)}%)</td>
+                    <td class="p-3 font-bold text-amber-800">R$ ${precoIdeal.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">R$ ${lucroLiquido.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if(platform === 'ifood' && document.getElementById('ifoodCustoTotal').innerText === 'R$ 0,00' && appData.receitas.length > 0) {
+                calcularPrecificacaoPlataforma('ifood');
+            }
+            if(platform === 'food99' && document.getElementById('food99CustoTotal').innerText === 'R$ 0,00' && appData.receitas.length > 0) {
+                calcularPrecificacaoPlataforma('food99');
+            }
+        }
+
     </script>
 </body>
 </html>
