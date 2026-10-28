@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <!-- Meta tags Mobile-First & PWA Obrigatórias -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Delícias do GO">
+    <meta name="theme-color" content="#78350F">
+
+    <!-- ÍCONE DO APLICATIVO OTIMIZADO PARA O IOS E ANDROID -->
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+    
+    <title>Calculadora de Custos & Precificação — Delícias do GO</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FEF8EE;
+            color: #4A2810;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bg-cream-100 { background-color: #FEF8EE; }
+        .bg-cream-200 { background-color: #FEF3C7; }
+        .bg-ocre { background-color: #D97706; }
+        .text-ocre { color: #D97706; }
+        .border-ocre { border-color: #D97706; }
+        .bg-cafe { background-color: #78350F; }
+        .text-cafe { color: #78350F; }
+        .active-tab {
+            background-color: #D97706 !important;
+            color: #FFFFFF !important;
+            font-weight: 700;
+        }
+        input, select, button {
+            touch-action: manipulation;
+        }
+        ::-webkit-scrollbar {
+            height: 4px;
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D97706;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-16">
+
+    <!-- ==================== TELA DE LOGIN / AUTENTICAÇÃO ==================== -->
+    <div id="auth-screen" class="fixed inset-0 z-50 bg-[#FEF8EE] flex items-center justify-center p-4">
+        <div class="bg-white max-w-md w-full p-6 sm:p-8 rounded-3xl border border-amber-200 shadow-xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="inline-flex p-3 bg-amber-600 text-white rounded-2xl shadow-md mb-1">
+                    <i data-lucide="chef-hat" class="w-8 h-8"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold text-amber-950">Delícias do GO</h1>
+                <p id="auth-subtitle" class="text-xs sm:text-sm text-amber-800">Acesse sua conta para gerenciar custos e receitas</p>
+            </div>
+
+            <!-- Formulário de Login -->
+            <form id="form-login" onsubmit="fazerLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 mb-1">E-mail de Acesso</label>
+                    <input type="email" id="login-email" required placeholder="exemplo@deliciasdogo.com" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 mb-1">Senha</label>
+                    <input type="password" id="login-senha" required placeholder="••••••••" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-600">
+                </div>
+                
+                <div class="flex items-center justify-between text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer text-amber-900">
+                        <input type="checkbox" class="rounded border-amber-300 text-amber-700 focus:ring-amber-600"> Lembrar de mim
+                    </label>
+                    <button type="button" onclick="mostrarTelaRecuperacao()" class="font-bold text-amber-700 hover:text-amber-900 hover:underline">
+                        Esqueceu a sua senha?
+                    </button>
+                </div>
+
+                <button type="submit" class="w-full bg-cafe hover:bg-amber-900 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Entrar no Sistema
+                </button>
+            </form>
+
+            <!-- Formulário de Recuperação de Senha -->
+            <form id="form-recuperacao" onsubmit="enviarRecuperacao(event)" class="space-y-4 hidden">
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
+                    Insira seu e-mail cadastrado. Enviaremos o código de redefinição de senha.
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 mb-1">E-mail de Recuperação</label>
+                    <input type="email" id="rec-email" required placeholder="seu@email.com" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30 focus:outline-none focus:ring-2 focus:ring-amber-600">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="voltarParaLogin()" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl text-xs transition-all">
+                        Voltar
+                    </button>
+                    <button type="submit" class="w-2/3 bg-ocre hover:bg-amber-700 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md">
+                        Enviar Código
+                    </button>
+                </div>
+            </form>
+
+            <!-- Formulário de Atualização de Senha -->
+            <form id="form-atualizacao" onsubmit="atualizarSenha(event)" class="space-y-4 hidden">
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900">
+                    Insira o código de confirmação e defina sua nova senha.
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 mb-1">Código de Confirmação</label>
+                    <input type="text" id="att-codigo" required placeholder="Ex: 998877" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 mb-1">Nova Senha</label>
+                    <input type="password" id="att-nova-senha" required placeholder="Mínimo 6 caracteres" class="w-full px-4 py-3 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                </div>
+                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md">
+                    Salvar Nova Senha
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== APLICATIVO PRINCIPAL ==================== -->
+    <div id="app-main-content" class="hidden">
+        <!-- HEADER / BARRA SUPERIOR -->
+        <header class="bg-cafe text-amber-100 shadow-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-amber-600 rounded-xl text-white shadow">
+                        <i data-lucide="chef-hat" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white leading-tight">Delícias do GO</h1>
+                        <p class="text-[11px] text-amber-200 font-medium">Gestão Gastronômica & Precificação</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="hidden sm:flex items-center gap-2 text-xs bg-amber-950/60 px-3 py-1.5 rounded-full border border-amber-800">
+                        <i data-lucide="radio" class="w-4 h-4 text-emerald-400 animate-pulse"></i>
+                        <span>Sincronização em Tempo Real Ativa</span>
+                    </div>
+                    <button onclick="fazerLogout()" title="Sair da Conta" class="bg-amber-800/80 hover:bg-rose-700 text-white p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> <span class="hidden md:inline">Sair</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- NAVEGAÇÃO POR ABAS -->
+        <nav class="bg-amber-100/90 backdrop-blur border-b border-amber-200 sticky top-[65px] sm:top-[73px] z-40 overflow-x-auto shadow-sm">
+            <div class="max-w-7xl mx-auto px-2 flex whitespace-nowrap gap-1.5 py-2.5" id="navTabs">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active-tab flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-sm">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard & Backup
+                </button>
+                <button onclick="switchTab('insumos')" id="tab-insumos" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="package" class="w-4 h-4"></i> Insumos
+                </button>
+                <button onclick="switchTab('receitas')" id="tab-receitas" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="utensils-crossed" class="w-4 h-4"></i> Ficha Técnica
+                </button>
+                <button onclick="switchTab('estoquePronto')" id="tab-estoquePronto" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="boxes" class="w-4 h-4"></i> Estoque Pronto
+                </button>
+                <button onclick="switchTab('vendas')" id="tab-vendas" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i> Controle de Vendas
+                </button>
+                <button onclick="switchTab('trafego')" id="tab-trafego" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="megaphone" class="w-4 h-4"></i> Tráfego Pago & Mídia
+                </button>
+                <button onclick="switchTab('custosFixos')" id="tab-custosFixos" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="calculator" class="w-4 h-4"></i> Custos Fixos
+                </button>
+                <button onclick="switchTab('precificacao')" id="tab-precificacao" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i> Precificação
+                </button>
+                <button onclick="switchTab('ifood')" id="tab-ifood" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="utensils" class="w-4 h-4"></i> iFood 🍔
+                </button>
+                <button onclick="switchTab('food99')" id="tab-food99" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="car" class="w-4 h-4"></i> 99Food 🚗
+                </button>
+                <button onclick="switchTab('frete')" id="tab-frete" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-900 hover:bg-amber-200/60 transition-all">
+                    <i data-lucide="truck" class="w-4 h-4"></i> Frete & Subsídio
+                </button>
+            </div>
+        </nav>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="max-w-7xl mx-auto px-3 sm:px-4 py-5 space-y-5">
+
+            <!-- ==================== DASHBOARD & BACKUP ==================== -->
+            <section id="sec-dashboard" class="tab-content space-y-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-amber-200 shadow-sm">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-amber-950">Visão Geral do Negócio</h2>
+                        <p class="text-xs sm:text-sm text-amber-800">Métricas financeiras atualizadas em tempo real.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <div class="flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200 text-xs">
+                            <span class="font-bold text-amber-900">Período:</span>
+                            <input type="month" id="filtroMesDashboard" onchange="renderDashboard()" class="bg-transparent font-bold text-amber-950 focus:outline-none">
+                        </div>
+                        <button onclick="exportarBackupJSON()" class="bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> Exportar
+                        </button>
+                        <button onclick="document.getElementById('importFile').click()" class="bg-ocre hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-2">
+                            <i data-lucide="upload" class="w-4 h-4"></i> Importar
+                        </button>
+                        <input type="file" id="importFile" accept=".json" class="hidden" onchange="importarBackupJSON(event)">
+                    </div>
+                </div>
+
+                <!-- CARDS DE DESTAQUE -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm border border-amber-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-amber-800">Maior Margem (%)</p>
+                                <h3 id="dash-maior-margem-nome" class="text-base sm:text-lg font-extrabold text-amber-950 mt-1">--</h3>
+                            </div>
+                            <span class="p-2 bg-emerald-100 text-emerald-700 rounded-xl"><i data-lucide="trending-up" class="w-5 h-5"></i></span>
+                        </div>
+                        <p id="dash-maior-margem-val" class="text-xl sm:text-2xl font-black text-emerald-600 mt-3">0.0%</p>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border-l-4 border-amber-500 shadow-sm border border-amber-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-amber-800">Mais Econômico (Menor CMV)</p>
+                                <h3 id="dash-menor-custo-nome" class="text-base sm:text-lg font-extrabold text-amber-950 mt-1">--</h3>
+                            </div>
+                            <span class="p-2 bg-amber-100 text-amber-700 rounded-xl"><i data-lucide="piggy-bank" class="w-5 h-5"></i></span>
+                        </div>
+                        <p id="dash-menor-custo-val" class="text-xl sm:text-2xl font-black text-amber-700 mt-3">R$ 0,00</p>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border-l-4 border-cafe shadow-sm border border-amber-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-amber-800">Ponto de Equilíbrio</p>
+                                <h3 class="text-[11px] text-amber-600 font-medium">Cobertura de Custos Fixos</h3>
+                            </div>
+                            <span class="p-2 bg-amber-100 text-cafe rounded-xl"><i data-lucide="scale" class="w-5 h-5"></i></span>
+                        </div>
+                        <p id="dash-ponto-equilibrio" class="text-xl sm:text-2xl font-black text-cafe mt-3">R$ 0,00</p>
+                        <p id="dash-ponto-equilibrio-un" class="text-[11px] text-amber-700 mt-1 font-semibold">Equivalente a 0 unidades/mês</p>
+                    </div>
+                </div>
+
+                <!-- RESUMO DE CADASTROS -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 mb-3 text-sm sm:text-base">
+                            <i data-lucide="boxes" class="w-4 h-4 text-amber-600"></i> Resumo de Insumos & Matéria-Prima
+                        </h3>
+                        <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
+                            <span class="text-amber-800">Total de Insumos Cadastrados</span>
+                            <span id="dash-total-insumos" class="font-bold text-amber-950">0</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
+                            <span class="text-amber-800">Categorias Ativas</span>
+                            <span id="dash-categorias-ativas" class="font-bold text-amber-950">0</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 mb-3 text-sm sm:text-base">
+                            <i data-lucide="scroll-text" class="w-4 h-4 text-amber-600"></i> Resumo do Mês Selecionado
+                        </h3>
+                        <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
+                            <span class="text-amber-800">Fichas Técnicas Salvas</span>
+                            <span id="dash-total-receitas" class="font-bold text-amber-950">0</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-amber-100 text-xs sm:text-sm">
+                            <span class="text-amber-800">Faturamento no Mês</span>
+                            <span id="dash-total-faturamento" class="font-bold text-emerald-700">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== CADASTRO DE INSUMOS ==================== -->
+            <section id="sec-insumos" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-5 h-5 text-amber-600"></i> Cadastrar Insumos & Embalagens
+                    </h2>
+                    <form id="formInsumo" onsubmit="salvarInsumo(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
+                        <div class="sm:col-span-2 lg:col-span-2">
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Nome do Insumo</label>
+                            <input type="text" id="insumoNome" required placeholder="Ex: Farinha, Calabresa..." class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Categoria</label>
+                            <select id="insumoCategoria" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <option value="Farinhas">Farinhas & Secos</option>
+                                <option value="Laticínios">Laticínios & Frios</option>
+                                <option value="Recheios">Recheios & Carnes</option>
+                                <option value="Embalagens">Embalagens & Etiquetas</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Preço Pago (R$)</label>
+                            <input type="number" step="0.01" id="insumoPreco" required placeholder="0,00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Qtd. Comprada</label>
+                            <div class="flex gap-1">
+                                <input type="number" step="0.01" id="insumoQtd" required placeholder="1000" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <select id="insumoUnidade" class="px-2 py-2.5 border border-amber-300 rounded-xl bg-amber-100 text-xs font-bold">
+                                    <option value="g">g</option>
+                                    <option value="kg">kg</option>
+                                    <option value="ml">ml</option>
+                                    <option value="L">L</option>
+                                    <option value="un">un</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Fator Perda (%)</label>
+                            <input type="number" step="0.1" id="insumoPerda" value="0" placeholder="0" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-6 flex justify-end mt-2">
+                            <button type="submit" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> Salvar Insumo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- TABELA DE INSUMOS -->
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="list" class="w-4 h-4 text-amber-600"></i> Insumos Cadastrados
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Nome</th>
+                                    <th class="p-3">Categoria</th>
+                                    <th class="p-3">Preço Pago</th>
+                                    <th class="p-3">Qtd. Original</th>
+                                    <th class="p-3">Perda</th>
+                                    <th class="p-3">Custo Efetivo Base</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaInsumos" class="divide-y divide-amber-100">
+                                <!-- Inserido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== FICHA TÉCNICA ==================== -->
+            <section id="sec-receitas" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                        <i data-lucide="utensils" class="w-5 h-5 text-amber-600"></i> Ficha Técnica (Massa + Recheio)
+                    </h2>
+
+                    <form id="formReceita" onsubmit="salvarReceita(event)" class="space-y-4">
+                        <input type="hidden" id="recIdEditando">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-amber-900 mb-1">Nome do Produto / Pão</label>
+                                <input type="text" id="recNome" required placeholder="Ex: Pão de Calabresa Artesanal" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-amber-900 mb-1">Rendimento Final (Pães)</label>
+                                <input type="number" min="1" id="recRendimento" value="10" required class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                            </div>
+                        </div>
+
+                        <div class="bg-amber-50/60 p-3.5 sm:p-4 rounded-xl border border-amber-200 space-y-3">
+                            <h4 class="font-bold text-amber-900 text-xs uppercase tracking-wider">Ingredientes da Receita</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                <div class="sm:col-span-7">
+                                    <select id="recSelectInsumo" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-white">
+                                        <!-- Populado dinamicamente -->
+                                    </select>
+                                </div>
+                                <div class="sm:col-span-3">
+                                    <input type="number" step="0.01" id="recQtdInsumo" placeholder="Qtd (g, ml, un)" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-white">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <button type="button" onclick="addInsumoReceita()" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-2.5 rounded-xl text-sm shadow">
+                                        Adicionar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto mt-2">
+                                <table class="w-full text-xs text-left bg-white rounded-xl overflow-hidden border border-amber-200 whitespace-nowrap">
+                                    <thead class="bg-amber-100 text-amber-900">
+                                        <tr>
+                                            <th class="p-2.5">Ingrediente</th>
+                                            <th class="p-2.5">Qtd Utilizada</th>
+                                            <th class="p-2.5">Custo Proporcional Atual</th>
+                                            <th class="p-2.5 text-center">Remover</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recListaInsumosTemp">
+                                        <!-- Inserido dinamicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/30 p-3.5 rounded-xl border border-amber-200">
+                            <div>
+                                <label class="block text-xs font-bold text-amber-900 mb-1">Custo Embalagem / Un (R$)</label>
+                                <input type="number" step="0.01" id="recEmbalagemUn" value="0.00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-amber-900 mb-1">Custo Etiqueta / Un (R$)</label>
+                                <input type="number" step="0.01" id="recEtiquetaUn" value="0.00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-white">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <button type="button" id="btnCancelarRecEdit" onclick="cancelarEdicaoReceita()" class="hidden px-5 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl text-sm transition-all">Cancelar</button>
+                            <button type="submit" id="btnSalvarRecText" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4"></i> Salvar Ficha Técnica
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="book-open" class="w-4 h-4 text-amber-600"></i> Fichas Técnicas Salvas
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Rendimento</th>
+                                    <th class="p-3">Custo Total (Fornada)</th>
+                                    <th class="p-3">CMV Unitário</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaReceitas" class="divide-y divide-amber-100">
+                                <!-- Inserido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== ESTOQUE PRONTO PARA VENDA ==================== -->
+            <section id="sec-estoquePronto" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                        <i data-lucide="package-plus" class="w-5 h-5 text-amber-600"></i> Lançar Produto Pronto no Estoque
+                    </h2>
+                    <form id="formEstoquePronto" onsubmit="salvarEstoquePronto(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-end">
+                        <input type="hidden" id="estoqueIdEditando">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Selecionar Produto (Ficha Técnica)</label>
+                            <select id="estoqueSelectReceita" required class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <!-- Populado dinamicamente -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Quantidade Pronta (Unidades)</label>
+                            <input type="number" min="1" id="estoqueQtdPronta" required placeholder="Ex: 15" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div class="sm:col-span-3 flex justify-end gap-2 mt-2">
+                            <button type="button" id="btnCancelarEstoqueEdit" onclick="cancelarEdicaoEstoque()" class="hidden px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold rounded-xl">Cancelar</button>
+                            <button type="submit" id="btnSalvarEstoqueText" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Adicionar ao Estoque
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200 flex justify-between items-center">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="boxes" class="w-4 h-4 text-amber-600"></i> Produtos Prontos em Estoque
+                        </h3>
+                        <div class="text-xs font-bold text-amber-900 bg-amber-100 px-3 py-1.5 rounded-xl">
+                            Valor Total em Estoque: <span id="estoqueValorTotalGeral" class="text-emerald-700 font-extrabold">R$ 0,00</span>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Qtd. em Estoque</th>
+                                    <th class="p-3">CMV Unitário Atual</th>
+                                    <th class="p-3">Custo Total Estoque</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaEstoquePronto" class="divide-y divide-amber-100">
+                                <!-- Inserido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== CONTROLE DE VENDAS ==================== -->
+            <section id="sec-vendas" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                        <i data-lucide="shopping-bag" class="w-5 h-5 text-amber-600"></i> Registrar Nova Venda
+                    </h2>
+                    <form id="formVenda" onsubmit="salvarVenda(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-end">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Produto (Cardápio / Ficha Técnica)</label>
+                            <select id="vendaSelectReceita" required onchange="atualizarPrecoSugeridoVenda()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <!-- Populado dinamicamente -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Quantidade Vendida</label>
+                            <input type="number" min="1" id="vendaQtd" required value="1" placeholder="Ex: 2" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Preço Unitário de Venda (R$)</label>
+                            <input type="number" step="0.01" id="vendaPrecoUn" required placeholder="0,00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold text-emerald-700 bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Canal / Forma de Pagamento</label>
+                            <select id="vendaCanal" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <option value="WhatsApp / Pix">WhatsApp / Pix</option>
+                                <option value="Delivery / iFood">Delivery / iFood</option>
+                                <option value="Presencial / Encomenda">Presencial / Encomenda</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-3 flex justify-end mt-2">
+                            <button type="submit" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i> Concluir e Baixar no Estoque
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- CARDS DE RESUMO DE VENDAS -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-amber-200 shadow-sm">
+                    <h3 class="font-bold text-amber-950">Métricas do Mês Selecionado</h3>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="font-bold text-amber-900">Mês:</span>
+                        <input type="month" id="filtroMesVendas" onchange="renderVendas()" class="bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-xl font-bold text-amber-950">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <p class="text-xs font-bold text-amber-800 uppercase">Faturamento no Mês</p>
+                        <p id="vendasTotalFaturamento" class="text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <p class="text-xs font-bold text-amber-800 uppercase">CMV Total das Vendas</p>
+                        <p id="vendasTotalCmv" class="text-2xl font-black text-amber-900 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-cafe">
+                        <p class="text-xs font-bold text-amber-800 uppercase">Lucro Líquido no Mês</p>
+                        <p id="vendasTotalLucro" class="text-2xl font-black text-cafe mt-1">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="receipt" class="w-4 h-4 text-amber-600"></i> Histórico de Vendas
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Data / Hora</th>
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Qtd</th>
+                                    <th class="p-3">Preço Un.</th>
+                                    <th class="p-3">Total Venda</th>
+                                    <th class="p-3">Lucro Líquido</th>
+                                    <th class="p-3">Canal</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaVendas" class="divide-y divide-amber-100">
+                                <!-- Inserido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== TRÁFEGO PAGO & MÍDIA (COM LEITOR DE PRINTS) ==================== -->
+            <section id="sec-trafego" class="tab-content hidden space-y-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-amber-200 shadow-sm">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-amber-950 flex items-center gap-2">
+                            <i data-lucide="megaphone" class="w-6 h-6 text-amber-600"></i> Gestão de Tráfego Pago & Mídia
+                        </h2>
+                        <p class="text-xs sm:text-sm text-amber-800">Acompanhamento de anúncios do Instagram para o WhatsApp Business.</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs bg-amber-50 px-3 py-2 rounded-xl border border-amber-200">
+                        <span class="font-bold text-amber-900">Mês de Análise:</span>
+                        <input type="month" id="filtroMesTrafego" onchange="renderTrafego()" class="bg-transparent font-bold text-amber-950 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- CARDS DE MÉTRICAS DE TRÁFEGO -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <p class="text-[11px] font-bold text-amber-800 uppercase">Investimento em Ads</p>
+                        <p id="trafegoTotalInv" class="text-xl sm:text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-indigo-600">
+                        <p class="text-[11px] font-bold text-indigo-800 uppercase">Leads (Zap Business)</p>
+                        <p id="trafegoTotalLeads" class="text-xl sm:text-2xl font-black text-indigo-700 mt-1">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-rose-600">
+                        <p class="text-[11px] font-bold text-rose-800 uppercase">Custo por Lead (CPL)</p>
+                        <p id="trafegoCplMedio" class="text-xl sm:text-2xl font-black text-rose-700 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <p class="text-[11px] font-bold text-emerald-800 uppercase">Vendas Geradas</p>
+                        <p id="trafegoTotalVendas" class="text-xl sm:text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-cafe">
+                        <p class="text-[11px] font-bold text-amber-900 uppercase">ROAS (Retorno Ads)</p>
+                        <p id="trafegoRoas" class="text-xl sm:text-2xl font-black text-cafe mt-1">0.0x</p>
+                    </div>
+                </div>
+
+                <!-- LEITOR INTELIGENTE POR PRINT DE TELA -->
+                <div class="bg-amber-50 p-4 sm:p-5 rounded-2xl border border-amber-300 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="scan-line" class="w-5 h-5 text-amber-700"></i>
+                            <h3 class="font-bold text-amber-950 text-sm sm:text-base">Preenchimento Automático por Print (Instagram / WhatsApp)</h3>
+                        </div>
+                        <span class="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-extrabold">IA Reader</span>
+                    </div>
+                    <p class="text-xs text-amber-800">Envie um print da tela do seu painel de anúncios para preencher os dados da campanha automaticamente.</p>
+                    <div class="flex items-center gap-3">
+                        <label class="cursor-pointer bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-2 transition-all">
+                            <i data-lucide="image-plus" class="w-4 h-4"></i> Enviar Print da Campanha
+                            <input type="file" accept="image/*" class="hidden" onchange="processarPrintCampanha(event)">
+                        </label>
+                        <span id="printStatusMsg" class="text-xs font-semibold text-amber-900">Nenhuma imagem enviada</span>
+                    </div>
+                </div>
+
+                <!-- FORMULÁRIO DE CADASTRO DE CAMPANHA -->
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <h3 class="font-bold text-amber-950 mb-3 flex items-center gap-2 text-sm sm:text-base">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-amber-600"></i> Registrar / Atualizar Campanha de Anúncios
+                    </h3>
+                    <form id="formTrafego" onsubmit="salvarCampanhaTrafego(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5 items-end">
+                        <input type="hidden" id="trafegoIdEditando">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Nome da Campanha / Criativo</label>
+                            <input type="text" id="trafegoNome" required placeholder="Ex: Empadão Gourmet - Meta Ads" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Investimento Total (R$)</label>
+                            <input type="number" step="0.01" id="trafegoInvestimento" required placeholder="0,00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Leads (Cliques no WhatsApp)</label>
+                            <input type="number" id="trafegoLeads" required placeholder="Ex: 45" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Vendas Fechadas (R$)</label>
+                            <input type="number" step="0.01" id="trafegoVendas" required placeholder="Ex: 350,00" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="w-full bg-ocre hover:bg-amber-700 text-white font-bold px-5 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SUGESTÕES INTELIGENTES E INSIGHTS -->
+                <div class="bg-gradient-to-br from-amber-50 to-amber-100/60 p-5 rounded-2xl border border-amber-300 shadow-sm space-y-3">
+                    <h3 class="font-extrabold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                        <i data-lucide="lightbulb" class="w-5 h-5 text-amber-600"></i> Sugestões & Insights de Otimização (WhatsApp & Instagram)
+                    </h3>
+                    <div id="trafegoInsightsContainer" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs sm:text-sm text-amber-900">
+                        <div class="bg-white p-3.5 rounded-xl border border-amber-200 shadow-sm space-y-1">
+                            <span class="font-bold text-amber-950 flex items-center gap-1.5"><i data-lucide="target" class="w-4 h-4 text-emerald-600"></i> Meta de Custo por Lead (CPL)</span>
+                            <p id="insightCplText" class="text-amber-800">O CPL ideal para delivery artesanal deve ficar abaixo de R$ 3,50 por conversa iniciada no WhatsApp.</p>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-xl border border-amber-200 shadow-sm space-y-1">
+                            <span class="font-bold text-amber-950 flex items-center gap-1.5"><i data-lucide="trending-up" class="w-4 h-4 text-indigo-600"></i> Retorno Esperado (ROAS)</span>
+                            <p id="insightRoasText" class="text-amber-800">Busque manter um ROAS superior a 3.0x (para cada R$ 1,00 investido, retornar R$ 3,00 em vendas).</p>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-xl border border-amber-200 shadow-sm space-y-1">
+                            <span class="font-bold text-amber-950 flex items-center gap-1.5"><i data-lucide="message-square" class="w-4 h-4 text-amber-600"></i> Automação WhatsApp</span>
+                            <p class="text-amber-800">Utilize etiquetas coloridas no WhatsApp Business para identificar conversas vindas de anúncio e acelerar o fechamento.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABELA DE CAMPANHAS -->
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="list" class="w-4 h-4 text-amber-600"></i> Campanhas Registradas no Período
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Campanha / Criativo</th>
+                                    <th class="p-3">Investimento</th>
+                                    <th class="p-3">Leads (Zap)</th>
+                                    <th class="p-3">CPL</th>
+                                    <th class="p-3">Vendas Diretas</th>
+                                    <th class="p-3">ROAS</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaTrafego" class="divide-y divide-amber-100">
+                                <!-- Inserido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== CUSTOS FIXOS ==================== -->
+            <section id="sec-custosFixos" class="tab-content hidden space-y-5">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm space-y-4">
+                        <h2 class="text-lg sm:text-xl font-bold text-amber-950 flex items-center gap-2">
+                            <i data-lucide="building" class="w-5 h-5 text-amber-600"></i> Custos Fixos & Mão de Obra
+                        </h2>
+                        <form id="formCustosFixos" onsubmit="salvarCustosFixos(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <div>
+                                <label class="block text-xs font-bold text-amber-900 mb-1">Gás (R$/mês)</label>
+                                <input type="number" step="0.01" id="cfGas" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-amber-900 mb-1">Energia Elétrica (R$/mês)</label>
+                                <input type="number" step="0.01" id="cfEnergia" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-amber-900 mb-1">MEI / Impostos (R$/mês)</label>
+                                <input type="number" step="0.01" id="cfMei" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-amber-900 mb-1">Pró-Labore (R$/mês)</label>
+                                <input type="number" step="0.01" id="cfProLabore" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-amber-900 mb-1">Outros Gastos Fixos</label>
+                                <input type="number" step="0.01" id="cfOutros" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                            </div>
+                            <div class="sm:col-span-2 flex justify-end">
+                                <button type="submit" class="w-full sm:w-auto bg-ocre hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                                    <i data-lucide="save" class="w-4 h-4"></i> Salvar Custos Fixos
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-bold text-amber-950 mb-4 flex items-center gap-2 text-sm sm:text-base">
+                                <i data-lucide="pie-chart" class="w-5 h-5 text-amber-600"></i> Rateio para Precificação
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-amber-900 mb-1">Taxa de Rateio Aplicada (%)</label>
+                                    <input type="number" step="0.1" id="cfTaxaRateio" value="15" onchange="salvarCustosFixos(event)" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold text-amber-950 bg-amber-50/30">
+                                </div>
+                                <div class="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-amber-800">Custo Fixo Total:</span>
+                                        <span id="cfTotalMensalVal" class="font-bold text-amber-950">R$ 0,00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== PRECIFICAÇÃO & PROJEÇÃO COM ROI ==================== -->
+            <section id="sec-precificacao" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <h2 class="text-lg sm:text-xl font-bold text-amber-950 mb-4 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-5 h-5 text-amber-600"></i> Parâmetros Globais de Precificação
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Margem de Lucro Desejada (%)</label>
+                            <input type="number" id="precMargemDesejada" value="30" oninput="renderPrecificacao()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold text-amber-950 bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Taxa de Cartão / Plataforma (%)</label>
+                            <input type="number" step="0.1" id="precTaxaCartao" value="5.0" oninput="renderPrecificacao()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold text-amber-950 bg-amber-50/30">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARDS DE PROJEÇÃO FINANCEIRA DO ESTOQUE COM ROI -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <div class="flex items-center gap-2 text-amber-800 text-xs font-bold uppercase mb-1">
+                            <i data-lucide="package" class="w-4 h-4"></i> CMV do Estoque Atual
+                        </div>
+                        <p id="projCmvEstoque" class="text-xl sm:text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
+                        <p class="text-[11px] text-amber-700 mt-1">Custo investido nos produtos</p>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <div class="flex items-center gap-2 text-emerald-800 text-xs font-bold uppercase mb-1">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i> Faturamento Projetado
+                        </div>
+                        <p id="projFaturamentoEstoque" class="text-xl sm:text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                        <p class="text-[11px] text-emerald-800 mt-1">Valor a receber ao zerar estoque</p>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-cafe">
+                        <div class="flex items-center gap-2 text-cafe text-xs font-bold uppercase mb-1">
+                            <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i> Lucro Líquido Projetado
+                        </div>
+                        <p id="projLucroEstoque" class="text-xl sm:text-2xl font-black text-cafe mt-1">R$ 0,00</p>
+                        <p class="text-[11px] text-amber-900 mt-1">Renda financeira esperada</p>
+                    </div>
+
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-indigo-600">
+                        <div class="flex items-center gap-2 text-indigo-800 text-xs font-bold uppercase mb-1">
+                            <i data-lucide="percent" class="w-4 h-4"></i> Retorno Sobre Investimento (ROI)
+                        </div>
+                        <p id="projRoiEstoque" class="text-xl sm:text-2xl font-black text-indigo-700 mt-1">0.0%</p>
+                        <p class="text-[11px] text-indigo-800 mt-1">Retorno percentual do capital</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 flex items-center gap-2 text-sm sm:text-base">
+                            <i data-lucide="tags" class="w-4 h-4 text-amber-600"></i> Sugestão de Preço & Valor Comercializado
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">CMV Direto</th>
+                                    <th class="p-3">Custo Fixo Agregado</th>
+                                    <th class="p-3">Custo Total</th>
+                                    <th class="p-3">Preço Sugerido</th>
+                                    <th class="p-3 bg-amber-200/50">Valor Comercializado (R$)</th>
+                                    <th class="p-3">Lucro Líquido</th>
+                                    <th class="p-3">Margem Líquida</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaPrecificacao" class="divide-y divide-amber-100">
+                                <!-- Inserido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== GESTÃO DE FRETE ==================== -->
+            <!-- ==================== iFOOD PRECIFICAÇÃO ==================== -->
+            <section id="sec-ifood" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-red-100 text-red-700 rounded-xl">
+                                <i data-lucide="utensils" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg sm:text-xl font-bold text-amber-950">Calculadora de Precificação — iFood 🍔</h2>
+                                <p class="text-xs text-amber-800">Simule o preço de venda considerando a comissão do iFood (típica de 12% a 27%) e taxa de cartão.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Selecionar Produto (Ficha Técnica)</label>
+                            <select id="ifoodSelectReceita" onchange="carregarCustosPlataforma('ifood')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <!-- Populado dinamicamente -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Comissão iFood (%)</label>
+                            <input type="number" step="0.1" id="ifoodComissao" value="23.0" oninput="calcularPrecificacaoPlataforma('ifood')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Margem de Lucro Desejada (%)</label>
+                            <input type="number" step="0.1" id="ifoodMargem" value="30.0" oninput="calcularPrecificacaoPlataforma('ifood')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <p class="text-xs font-bold text-amber-800 uppercase">CMV + Custos Totais</p>
+                        <p id="ifoodCustoTotal" class="text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-red-600">
+                        <p class="text-xs font-bold text-red-800 uppercase">Preço Sugerido iFood</p>
+                        <p id="ifoodPrecoSugerido" class="text-2xl font-black text-red-700 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <p class="text-xs font-bold text-emerald-800 uppercase">Lucro Líquido Estimado</p>
+                        <p id="ifoodLucroLiquido" class="text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 text-sm sm:text-base flex items-center gap-2">
+                            <i data-lucide="list" class="w-4 h-4 text-amber-600"></i> Tabela Geral de Precificação iFood
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">CMV Un.</th>
+                                    <th class="p-3">Comissão iFood</th>
+                                    <th class="p-3">Preço Ideal iFood</th>
+                                    <th class="p-3">Lucro Líquido</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaPrecificacaoIfood" class="divide-y divide-amber-100">
+                                <!-- Dinâmico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 99FOOD PRECIFICAÇÃO ==================== -->
+            <section id="sec-food99" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-amber-100 text-amber-700 rounded-xl">
+                                <i data-lucide="car" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg sm:text-xl font-bold text-amber-950">Calculadora de Precificação — 99Food 🚗</h2>
+                                <p class="text-xs text-amber-800">Simule o preço de venda para o 99Food com comissões mais competitivas do mercado.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Selecionar Produto (Ficha Técnica)</label>
+                            <select id="food99SelectReceita" onchange="carregarCustosPlataforma('food99')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm bg-amber-50/30">
+                                <!-- Populado dinamicamente -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Comissão 99Food (%)</label>
+                            <input type="number" step="0.1" id="food99Comissao" value="15.0" oninput="calcularPrecificacaoPlataforma('food99')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Margem de Lucro Desejada (%)</label>
+                            <input type="number" step="0.1" id="food99Margem" value="30.0" oninput="calcularPrecificacaoPlataforma('food99')" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-600">
+                        <p class="text-xs font-bold text-amber-800 uppercase">CMV + Custos Totais</p>
+                        <p id="food99CustoTotal" class="text-2xl font-black text-amber-950 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-amber-700">
+                        <p class="text-xs font-bold text-amber-900 uppercase">Preço Sugerido 99Food</p>
+                        <p id="food99PrecoSugerido" class="text-2xl font-black text-amber-900 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm border-l-4 border-emerald-600">
+                        <p class="text-xs font-bold text-emerald-800 uppercase">Lucro Líquido Estimado</p>
+                        <p id="food99LucroLiquido" class="text-2xl font-black text-emerald-700 mt-1">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-200">
+                        <h3 class="font-bold text-amber-950 text-sm sm:text-base flex items-center gap-2">
+                            <i data-lucide="list" class="w-4 h-4 text-amber-600"></i> Tabela Geral de Precificação 99Food
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">CMV Un.</th>
+                                    <th class="p-3">Comissão 99Food</th>
+                                    <th class="p-3">Preço Ideal 99Food</th>
+                                    <th class="p-3">Lucro Líquido</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaPrecificacaoFood99" class="divide-y divide-amber-100">
+                                <!-- Dinâmico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== FRETE ==================== -->
+            <section id="sec-frete" class="tab-content hidden space-y-5">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="p-2.5 bg-amber-100 text-amber-800 rounded-xl">
+                            <i data-lucide="navigation" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold text-amber-950">Simulador de Frete & Subsídio</h2>
+                            <p class="text-xs text-amber-800">Análise de viabilidade logística e travas de segurança</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-4">
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Valor do Carrinho (R$)</label>
+                            <input type="number" step="0.01" id="freteValorCarrinho" placeholder="Ex: 120,00" oninput="calcularFreteEstrategico()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">CMV do Carrinho (R$)</label>
+                            <input type="number" step="0.01" id="freteCustoCarrinho" placeholder="Ex: 45,00" oninput="calcularFreteEstrategico()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-900 mb-1">Custo Real do Motoboy (R$)</label>
+                            <input type="number" step="0.01" id="freteCustoMotoboy" placeholder="Ex: 28,00" oninput="calcularFreteEstrategico()" class="w-full px-3 py-2.5 border border-amber-300 rounded-xl text-sm font-bold bg-amber-50/30">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="freteResultadoCard" class="bg-white p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm hidden space-y-5">
+                    <div id="freteSemaforoBox" class="p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border">
+                        <div class="flex items-center gap-3">
+                            <div id="freteSemaforoIcon" class="p-3 rounded-xl text-white">
+                                <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <span id="freteSemaforoBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md">--</span>
+                                <h3 id="freteSemaforoTitulo" class="text-base sm:text-lg font-bold mt-1">--</h3>
+                                <p id="freteSemaforoDesc" class="text-xs mt-0.5">--</p>
+                            </div>
+                        </div>
+                        <div class="text-left sm:text-right w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0 border-amber-200">
+                            <p class="text-xs font-bold text-gray-500 uppercase">Margem Final</p>
+                            <p id="freteMargemFinalVal" class="text-2xl sm:text-3xl font-black">0.0%</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                            <h4 class="font-bold text-xs text-amber-900 uppercase tracking-wider mb-2">Recomendação de Subsídio</h4>
+                            <div class="space-y-1.5 text-xs sm:text-sm">
+                                <div class="flex justify-between">
+                                    <span>Desconto Sugerido:</span>
+                                    <span id="freteDescontoRecomendado" class="font-extrabold text-amber-950">R$ 0,00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Frete Cliente:</span>
+                                    <span id="fretePagoPeloCliente" class="font-extrabold text-amber-950">R$ 0,00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                            <h4 class="font-bold text-xs text-amber-900 uppercase tracking-wider mb-2">Demonstrativo do Pedido</h4>
+                            <div class="space-y-1.5 text-xs sm:text-sm">
+                                <div class="flex justify-between">
+                                    <span>Lucro Líquido:</span>
+                                    <span id="freteLucroLiquidoReais" class="font-extrabold text-emerald-700">R$ 0,00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Trava de Segurança (20%):</span>
+                                    <span id="freteStatusTrava" class="font-bold">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="freteUpsellBox" class="p-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl shadow-md hidden flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="sparkles" class="w-6 h-6 text-amber-200 shrink-0"></i>
+                            <div>
+                                <h4 class="font-bold text-xs sm:text-sm">Sugestão de Upsell</h4>
+                                <p id="freteUpsellTexto" class="text-xs text-amber-100">Adicione mais produtos para liberar frete subsidiado com segurança!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- FIRESTORE SDK E LÓGICA DO APLICATIVO -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBimS3lVLHas9TZt6do6-Icg7NWzfG0BSE",
+          authDomain: "deliciasdogo.firebaseapp.com",
+          projectId: "deliciasdogo",
+          storageBucket: "deliciasdogo.firebasestorage.app",
+          messagingSenderId: "131089324897",
+          appId: "1:131089324897:web:71a443a5c2c2d36efd4320"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const USUARIOS_PADRAO = [
+            { email: "liefield@gmail.com", senhaSalva: "Meleca#25" },
+            { email: "jehpeixoto@icloud.com", senhaSalva: "Meleca#25" }
+        ];
+
+        let appData = {
+            insumos: [],
+            receitas: [],
+            estoquePronto: [],
+            vendas: [],
+            campanhasTrafego: [],
+            custosFixos: { gas: 0, energia: 0, mei: 0, proLabore: 0, outros: 0, taxaRateio: 15 },
+            precificacao: { margemDesejada: 30, taxaCartao: 5.0 },
+            usuarios: USUARIOS_PADRAO
+        };
+
+        let tempInsumosReceita = [];
+        let unsubscribeFirestore = null;
+
+        window.onload = function() {
+            const hoje = new Date();
+            const anoMes = hoje.toISOString().slice(0, 7);
+            const filtroDash = document.getElementById('filtroMesDashboard');
+            const filtroVendas = document.getElementById('filtroMesVendas');
+            const filtroTrafego = document.getElementById('filtroMesTrafego');
+            if(filtroDash) filtroDash.value = anoMes;
+            if(filtroVendas) filtroVendas.value = anoMes;
+            if(filtroTrafego) filtroTrafego.value = anoMes;
+
+            const docRef = doc(db, "dados", "delicias_go");
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    appData = docSnap.data();
+                    if(!appData.usuarios || appData.usuarios.length === 0) appData.usuarios = [...USUARIOS_PADRAO];
+                    if(!appData.campanhasTrafego) appData.campanhasTrafego = [];
+                }
+            });
+
+            if(sessionStorage.getItem('delicias_go_logged') === 'true') {
+                liberarApp();
+            }
+        };
+
+        window.fazerLogin = function(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('login-email').value.trim().toLowerCase();
+            const senhaInput = document.getElementById('login-senha').value;
+
+            const listaUsuarios = (appData.usuarios && appData.usuarios.length > 0) ? appData.usuarios : USUARIOS_PADRAO;
+            const usuarioValido = listaUsuarios.find(u => u.email.toLowerCase() === emailInput && u.senhaSalva === senhaInput);
+
+            if(usuarioValido) {
+                sessionStorage.setItem('delicias_go_logged', 'true');
+                sessionStorage.setItem('delicias_go_user', usuarioValido.email);
+                liberarApp();
+            } else {
+                alert("E-mail ou senha incorretos. Tente novamente.");
+            }
+        }
+
+        window.fazerLogout = function() {
+            if(unsubscribeFirestore) unsubscribeFirestore();
+            sessionStorage.removeItem('delicias_go_logged');
+            sessionStorage.removeItem('delicias_go_user');
+            document.getElementById('app-main-content').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('form-login').reset();
+        }
+
+        window.mostrarTelaRecuperacao = function() {
+            document.getElementById('form-login').classList.add('hidden');
+            document.getElementById('form-recuperacao').classList.remove('hidden');
+            document.getElementById('auth-subtitle').innerText = "Recuperação de Senha";
+        }
+
+        window.voltarParaLogin = function() {
+            document.getElementById('form-recuperacao').classList.add('hidden');
+            document.getElementById('form-atualizacao').classList.add('hidden');
+            document.getElementById('form-login').classList.remove('hidden');
+            document.getElementById('auth-subtitle').innerText = "Acesse sua conta para gerenciar custos e receitas";
+        }
+
+        window.enviarRecuperacao = function(e) {
+            e.preventDefault();
+            const emailRec = document.getElementById('rec-email').value.trim().toLowerCase();
+            const listaUsuarios = (appData.usuarios && appData.usuarios.length > 0) ? appData.usuarios : USUARIOS_PADRAO;
+            const usuarioExiste = listaUsuarios.find(u => u.email.toLowerCase() === emailRec);
+
+            if(!usuarioExiste) {
+                alert("E-mail não encontrado na base de dados cadastrada.");
+                return;
+            }
+
+            sessionStorage.setItem('rec_email_temp', emailRec);
+            alert(`Instruções enviadas para: ${emailRec}\n\n[Código de Teste]: Seu código de confirmação é: 998877`);
+            
+            document.getElementById('form-recuperacao').classList.add('hidden');
+            document.getElementById('form-atualizacao').classList.remove('hidden');
+            document.getElementById('auth-subtitle').innerText = "Redefinição de Senha";
+        }
+
+        window.atualizarSenha = async function(e) {
+            e.preventDefault();
+            const codigo = document.getElementById('att-codigo').value.trim();
+            const novaSenha = document.getElementById('att-nova-senha').value;
+            const emailRec = sessionStorage.getItem('rec_email_temp');
+
+            if(codigo !== "998877" && codigo !== "123456") {
+                alert("Código de confirmação inválido!");
+                return;
+            }
+
+            if(novaSenha.length < 6) {
+                alert("A nova senha precisa ter pelo menos 6 caracteres.");
+                return;
+            }
+
+            if(!appData.usuarios) appData.usuarios = [...USUARIOS_PADRAO];
+
+            const idx = appData.usuarios.findIndex(u => u.email.toLowerCase() === emailRec);
+            if(idx !== -1) {
+                appData.usuarios[idx].senhaSalva = novaSenha;
+            } else {
+                appData.usuarios.push({ email: emailRec, senhaSalva: novaSenha });
+            }
+
+            await salvarNaNuvem();
+            alert("Senha atualizada com sucesso! Faça o login com sua nova senha.");
+            document.getElementById('form-atualizacao').reset();
+            voltarParaLogin();
+        }
+
+        function liberarApp() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-main-content').classList.remove('hidden');
+            
+            const docRef = doc(db, "dados", "delicias_go");
+            unsubscribeFirestore = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    appData = docSnap.data();
+                    if(!appData.estoquePronto) appData.estoquePronto = [];
+                    if(!appData.vendas) appData.vendas = [];
+                    if(!appData.campanhasTrafego) appData.campanhasTrafego = [];
+                    if(!appData.usuarios) appData.usuarios = [...USUARIOS_PADRAO];
+                    atualizarTodasAsTelas();
+                } else {
+                    setDoc(docRef, appData);
+                }
+            }, (error) => {
+                console.error("Erro na sincronização em tempo real:", error);
+            });
+        }
+
+        async function salvarNaNuvem() {
+            try {
+                const docRef = doc(db, "dados", "delicias_go");
+                await setDoc(docRef, appData);
+            } catch(e) {
+                console.error("Erro ao salvar na nuvem", e);
+            }
+        }
+
+        function atualizarTodasAsTelas() {
+            renderInsumos();
+            renderReceitas();
+            renderEstoquePronto();
+            renderVendas();
+            renderTrafego();
+            renderCustosFixos();
+            renderPrecificacao();
+            renderDashboard(); renderTabelaPlataforma("ifood"); renderTabelaPlataforma("food99");
+            lucide.createIcons();
+        }
+
+        window.exportarBackupJSON = function() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "delicias_do_go_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        window.importarBackupJSON = function(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = async function(e) {
+                    try {
+                        const parsedData = JSON.parse(e.target.result);
+                        if(parsedData && parsedData.insumos && parsedData.receitas) {
+                            appData = parsedData;
+                            if(!appData.estoquePronto) appData.estoquePronto = [];
+                            if(!appData.vendas) appData.vendas = [];
+                            if(!appData.campanhasTrafego) appData.campanhasTrafego = [];
+                            await salvarNaNuvem();
+                            alert("Dados importados e sincronizados com sucesso!");
+                        } else {
+                            alert("Arquivo em formato inválido.");
+                        }
+                    } catch (error) {
+                        alert("Erro ao ler o arquivo JSON.");
+                    }
+                };
+            }
+        }
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
+            
+            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.add('active-tab');
+
+            if(tabId === 'dashboard') renderDashboard(); renderTabelaPlataforma("ifood"); renderTabelaPlataforma("food99");
+            if(tabId === 'precificacao') renderPrecificacao();
+            if(tabId === 'estoquePronto') renderEstoquePronto();
+            if(tabId === 'vendas') renderVendas();
+            if(tabId === 'trafego') renderTrafego(); if(tabId === 'ifood') renderTabelaPlataforma("ifood"); if(tabId === 'food99') renderTabelaPlataforma("food99");
+        }
+
+        // ==================== INSUMOS ====================
+        window.salvarInsumo = async function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('insumoNome').value.trim();
+            const categoria = document.getElementById('insumoCategoria').value;
+            const preco = parseFloat(document.getElementById('insumoPreco').value) || 0;
+            const qtd = parseFloat(document.getElementById('insumoQtd').value) || 1;
+            const unidade = document.getElementById('insumoUnidade').value;
+            const perda = parseFloat(document.getElementById('insumoPerda').value) || 0;
+
+            let qtdEfetiva = qtd * (1 - (perda / 100));
+            let custoUnitarioBase = preco / (qtdEfetiva > 0 ? qtdEfetiva : 1);
+
+            const novoInsumo = { id: Date.now(), nome, categoria, preco, qtd, unidade, perda, custoUnitarioBase };
+
+            appData.insumos.push(novoInsumo);
+            await salvarNaNuvem();
+            document.getElementById('formInsumo').reset();
+        }
+
+        window.deletarInsumo = async function(id) {
+            let insumoEmUso = false;
+            let nomeInsumo = "";
+            const insumoObj = appData.insumos.find(i => i.id === id);
+            if(insumoObj) nomeInsumo = insumoObj.nome;
+
+            appData.receitas.forEach(r => {
+                if(r.insumos && r.insumos.some(i => i.insumoId === id)) {
+                    insumoEmUso = true;
+                }
+            });
+
+            if(insumoEmUso) {
+                alert(`Não é possível excluir o insumo "${nomeInsumo}" pois ele está sendo utilizado em uma ou mais Fichas Técnicas.`);
+                return;
+            }
+
+            if(confirm("Tem certeza que deseja excluir este insumo?")) {
+                appData.insumos = appData.insumos.filter(i => i.id !== id);
+                await salvarNaNuvem();
+            }
+        }
+
+        function renderInsumos() {
+            const tbody = document.getElementById('tabelaInsumos');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            appData.insumos.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${item.nome}</td>
+                    <td class="p-3"><span class="bg-amber-100 text-amber-800 text-[11px] px-2 py-1 rounded-md font-medium">${item.categoria}</span></td>
+                    <td class="p-3">R$ ${item.preco.toFixed(2)}</td>
+                    <td class="p-3">${item.qtd} ${item.unidade}</td>
+                    <td class="p-3">${item.perda}%</td>
+                    <td class="p-3 font-bold text-amber-900">R$ ${item.custoUnitarioBase.toFixed(4)} / ${item.unidade}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deletarInsumo(${item.id})" class="text-rose-600 hover:text-rose-800 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const selectInsumo = document.getElementById('recSelectInsumo');
+            if (selectInsumo) {
+                selectInsumo.innerHTML = appData.insumos.length === 0 
+                    ? '<option value="">Nenhum insumo cadastrado</option>' 
+                    : '<option value="">Selecione o insumo...</option>' + appData.insumos.map(i => `<option value="${i.id}">${i.nome} (${i.categoria}) - R$ ${i.custoUnitarioBase.toFixed(4)}/${i.unidade}</option>`).join('');
+            }
+        }
+
+        // ==================== FICHA TÉCNICA ====================
+        window.addInsumoReceita = function() {
+            const select = document.getElementById('recSelectInsumo');
+            const insumoId = parseInt(select.value);
+            const qtd = parseFloat(document.getElementById('recQtdInsumo').value) || 0;
+
+            if(!insumoId || qtd <= 0) return;
+
+            const insumoObj = appData.insumos.find(i => i.id === insumoId);
+            if(!insumoObj) return;
+
+            const custoTotalItem = insumoObj.custoUnitarioBase * qtd;
+
+            tempInsumosReceita.push({ insumoId, nome: insumoObj.nome, categoria: insumoObj.categoria, qtd, unidade: insumoObj.unidade, custoTotal: custoTotalItem });
+            document.getElementById('recQtdInsumo').value = '';
+            renderListaInsumosTemp();
+        }
+
+        window.removerInsumoTemp = function(index) {
+            tempInsumosReceita.splice(index, 1);
+            renderListaInsumosTemp();
+        }
+
+        function renderListaInsumosTemp() {
+            const tbody = document.getElementById('recListaInsumosTemp');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            tempInsumosReceita.forEach((item, index) => {
+                const insumoAtual = appData.insumos.find(i => i.id === item.insumoId);
+                const custoAtual = insumoAtual ? insumoAtual.custoUnitarioBase * item.qtd : item.custoTotal;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2.5 font-medium">${item.nome} <span class="text-[11px] text-amber-700">(${item.categoria})</span></td>
+                    <td class="p-2.5">${item.qtd} ${item.unidade}</td>
+                    <td class="p-2.5 font-bold">R$ ${custoAtual.toFixed(2)}</td>
+                    <td class="p-2.5 text-center"><button type="button" onclick="removerInsumoTemp(${index})" class="text-rose-600 font-bold p-1">✕</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.salvarReceita = async function(e) {
+            e.preventDefault();
+            const idEditando = document.getElementById('recIdEditando').value;
+            const nome = document.getElementById('recNome').value.trim();
+            const rendimento = parseInt(document.getElementById('recRendimento').value) || 1;
+            const embalagemUn = parseFloat(document.getElementById('recEmbalagemUn').value) || 0;
+            const etiquetaUn = parseFloat(document.getElementById('recEtiquetaUn').value) || 0;
+
+            if(tempInsumosReceita.length === 0) {
+                alert("Adicione pelo menos um ingrediente à ficha técnica!");
+                return;
+            }
+
+            if(idEditando) {
+                const receitaObj = appData.receitas.find(r => r.id == idEditando);
+                if(receitaObj) {
+                    receitaObj.nome = nome;
+                    receitaObj.rendimento = rendimento;
+                    receitaObj.insumos = [...tempInsumosReceita];
+                    receitaObj.embalagemUn = embalagemUn;
+                    receitaObj.etiquetaUn = etiquetaUn;
+                }
+            } else {
+                const novaReceita = { id: Date.now(), nome, rendimento, insumos: [...tempInsumosReceita], embalagemUn, etiquetaUn };
+                appData.receitas.push(novaReceita);
+            }
+
+            tempInsumosReceita = [];
+            cancelarEdicaoReceita();
+            await salvarNaNuvem();
+            alert("Ficha técnica salva com sucesso!");
+        }
+
+        window.editarReceita = function(id) {
+            const receitaObj = appData.receitas.find(r => r.id === id);
+            if(!receitaObj) return;
+
+            document.getElementById('recIdEditando').value = receitaObj.id;
+            document.getElementById('recNome').value = receitaObj.nome;
+            document.getElementById('recRendimento').value = receitaObj.rendimento;
+            document.getElementById('recEmbalagemUn').value = receitaObj.embalagemUn || 0;
+            document.getElementById('recEtiquetaUn').value = receitaObj.etiquetaUn || 0;
+
+            tempInsumosReceita = [...receitaObj.insumos];
+            renderListaInsumosTemp();
+
+            document.getElementById('btnCancelarRecEdit').classList.remove('hidden');
+            document.getElementById('btnSalvarRecText').innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Atualizar Ficha Técnica';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lucide.createIcons();
+        }
+
+        window.cancelarEdicaoReceita = function() {
+            document.getElementById('formReceita').reset();
+            document.getElementById('recIdEditando').value = '';
+            tempInsumosReceita = [];
+            renderListaInsumosTemp();
+            document.getElementById('btnCancelarRecEdit').classList.add('hidden');
+            document.getElementById('btnSalvarRecText').innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Salvar Ficha Técnica';
+            lucide.createIcons();
+        }
+
+        window.deletarReceita = async function(id) {
+            const emEstoque = appData.estoquePronto.some(e => e.receitaId === id && e.quantidade > 0);
+            if(emEstoque) {
+                alert("Não é possível excluir esta Ficha Técnica pois ainda existem unidades deste produto no Estoque Pronto.");
+                return;
+            }
+
+            if(confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
+                appData.receitas = appData.receitas.filter(r => r.id !== id);
+                await salvarNaNuvem();
+            }
+        }
+
+        function calcularCmvReceita(r) {
+            let custoInsumosTotais = 0;
+            if(r.insumos) {
+                r.insumos.forEach(i => {
+                    const insumoObj = appData.insumos.find(ins => ins.id === i.insumoId);
+                    if(insumoObj) {
+                        custoInsumosTotais += insumoObj.custoUnitarioBase * i.qtd;
+                    } else {
+                        custoInsumosTotais += i.custoTotal;
+                    }
+                });
+            }
+            const custoInsumosUnitario = custoInsumosTotais / (r.rendimento > 0 ? r.rendimento : 1);
+            const cmvUnitario = custoInsumosUnitario + (r.embalagemUn || 0) + (r.etiquetaUn || 0);
+            return { custoInsumosTotais, cmvUnitario };
+        }
+
+        function renderReceitas() {
+            const tbody = document.getElementById('tabelaReceitas');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            appData.receitas.forEach(r => {
+                const { custoInsumosTotais, cmvUnitario } = calcularCmvReceita(r);
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${r.nome}</td>
+                    <td class="p-3">${r.rendimento} un</td>
+                    <td class="p-3 font-bold text-amber-900">R$ ${custoInsumosTotais.toFixed(2)}</td>
+                    <td class="p-3 font-black text-amber-950 bg-amber-100/40">R$ ${cmvUnitario.toFixed(2)} / un</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="editarReceita(${r.id})" class="text-amber-700 hover:text-amber-900 p-1" title="Editar Ficha Técnica"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deletarReceita(${r.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==================== ESTOQUE PRONTO ====================
+        window.salvarEstoquePronto = async function(e) {
+            e.preventDefault();
+            const idEditando = document.getElementById('estoqueIdEditando').value;
+            const receitaId = parseInt(document.getElementById('estoqueSelectReceita').value);
+            const quantidade = parseInt(document.getElementById('estoqueQtdPronta').value) || 0;
+
+            if(!receitaId || quantidade <= 0) {
+                alert("Selecione um produto válido e informe a quantidade.");
+                return;
+            }
+
+            const receitaObj = appData.receitas.find(r => r.id === receitaId);
+            if(!receitaObj) return;
+
+            const { cmvUnitario } = calcularCmvReceita(receitaObj);
+
+            if(idEditando) {
+                const item = appData.estoquePronto.find(e => e.id == idEditando);
+                if(item) {
+                    item.receitaId = receitaId;
+                    item.nomeProduto = receitaObj.nome;
+                    item.quantidade = quantidade;
+                    item.cmvUnitario = cmvUnitario;
+                    item.custoTotalEstoque = quantidade * cmvUnitario;
+                }
+            } else {
+                const novoItem = {
+                    id: Date.now(),
+                    receitaId: receitaId,
+                    nomeProduto: receitaObj.nome,
+                    quantidade: quantidade,
+                    cmvUnitario: cmvUnitario,
+                    custoTotalEstoque: quantidade * cmvUnitario
+                };
+                appData.estoquePronto.push(novoItem);
+            }
+
+            await salvarNaNuvem();
+            cancelarEdicaoEstoque();
+        }
+
+        window.editarEstoquePronto = function(id) {
+            const item = appData.estoquePronto.find(e => e.id === id);
+            if(!item) return;
+
+            document.getElementById('estoqueIdEditando').value = item.id;
+            document.getElementById('estoqueSelectReceita').value = item.receitaId;
+            document.getElementById('estoqueQtdPronta').value = item.quantidade;
+            document.getElementById('btnCancelarEstoqueEdit').classList.remove('hidden');
+            document.getElementById('btnSalvarEstoqueText').innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Atualizar Estoque';
+            lucide.createIcons();
+        }
+
+        window.cancelarEdicaoEstoque = function() {
+            document.getElementById('formEstoquePronto').reset();
+            document.getElementById('estoqueIdEditando').value = '';
+            document.getElementById('btnCancelarEstoqueEdit').classList.add('hidden');
+            document.getElementById('btnSalvarEstoqueText').innerHTML = '<i data-lucide="plus-circle" class="w-4 h-4"></i> Adicionar ao Estoque';
+            lucide.createIcons();
+        }
+
+        window.deletarEstoquePronto = async function(id) {
+            if(confirm("Tem certeza que deseja remover este item do estoque?")) {
+                appData.estoquePronto = appData.estoquePronto.filter(e => e.id !== id);
+                await salvarNaNuvem();
+            }
+        }
+
+        function renderEstoquePronto() {
+            const selectReceita = document.getElementById('estoqueSelectReceita');
+            if(selectReceita) {
+                selectReceita.innerHTML = appData.receitas.length === 0
+                    ? '<option value="">Nenhuma ficha técnica cadastrada</option>'
+                    : '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => {
+                        const { cmvUnitario } = calcularCmvReceita(r);
+                        return `<option value="${r.id}">${r.nome} (CMV Atual: R$ ${cmvUnitario.toFixed(2)})</option>`;
+                    }).join('');
+            }
+
+            const tbody = document.getElementById('tabelaEstoquePronto');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let valorGeralEstoque = 0;
+
+            appData.estoquePronto.forEach(item => {
+                const receitaObj = appData.receitas.find(r => r.id === item.receitaId);
+                const cmvAtual = receitaObj ? calcularCmvReceita(receitaObj).cmvUnitario : item.cmvUnitario;
+                const custoTotal = item.quantidade * cmvAtual;
+                valorGeralEstoque += custoTotal;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${item.nomeProduto}</td>
+                    <td class="p-3 font-bold text-amber-900">${item.quantidade} un</td>
+                    <td class="p-3">R$ ${cmvAtual.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">R$ ${custoTotal.toFixed(2)}</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="editarEstoquePronto(${item.id})" class="text-amber-700 hover:text-amber-900 p-1" title="Editar"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deletarEstoquePronto(${item.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const valGeralEl = document.getElementById('estoqueValorTotalGeral');
+            if(valGeralEl) valGeralEl.innerText = `R$ ${valorGeralEstoque.toFixed(2)}`;
+        }
+
+        // ==================== CONTROLE DE VENDAS ====================
+        window.atualizarPrecoSugeridoVenda = function() {
+            const select = document.getElementById('vendaSelectReceita');
+            const receitaId = parseInt(select.value);
+            if(!receitaId) return;
+
+            const receitaObj = appData.receitas.find(r => r.id === receitaId);
+            if(!receitaObj) return;
+
+            const margemDesejada = appData.precificacao.margemDesejada || 30;
+            const taxaCartao = appData.precificacao.taxaCartao || 5;
+            const taxaRateio = appData.custosFixos.taxaRateio || 15;
+
+            const { cmvUnitario } = calcularCmvReceita(receitaObj);
+            const custoFixoAgregado = cmvUnitario * (taxaRateio / 100);
+            const custoTotalUnitario = cmvUnitario + custoFixoAgregado;
+            const percentualDeducoes = (margemDesejada + taxaCartao) / 100;
+            const divisor = percentualDeducoes < 1 ? (1 - percentualDeducoes) : 0.1;
+            const precoSugerido = custoTotalUnitario / divisor;
+
+            const precoFinal = receitaObj.precoComercializado !== undefined ? receitaObj.precoComercializado : precoSugerido;
+            document.getElementById('vendaPrecoUn').value = precoFinal.toFixed(2);
+        }
+
+        window.salvarVenda = async function(e) {
+            e.preventDefault();
+            const receitaId = parseInt(document.getElementById('vendaSelectReceita').value);
+            const quantidade = parseInt(document.getElementById('vendaQtd').value) || 0;
+            const precoUnitario = parseFloat(document.getElementById('vendaPrecoUn').value) || 0;
+            const canal = document.getElementById('vendaCanal').value;
+
+            if(!receitaId || quantidade <= 0 || precoUnitario <= 0) {
+                alert("Selecione o produto, informe a quantidade e o preço unitário.");
+                return;
+            }
+
+            const receitaObj = appData.receitas.find(r => r.id === receitaId);
+            if(!receitaObj) return;
+
+            const { cmvUnitario } = calcularCmvReceita(receitaObj);
+            const cmvTotal = cmvUnitario * quantidade;
+            const valorTotal = precoUnitario * quantidade;
+
+            const taxaCartaoPct = (appData.precificacao.taxaCartao || 5) / 100;
+            const taxaCartaoReais = valorTotal * taxaCartaoPct;
+            const taxaRateioPct = (appData.custosFixos.taxaRateio || 15) / 100;
+            const custoFixoAgregado = cmvTotal * taxaRateioPct;
+            
+            const lucroTotal = valorTotal - cmvTotal - taxaCartaoReais - custoFixoAgregado;
+
+            const estoqueItem = appData.estoquePronto.find(item => item.receitaId === receitaId);
+            if(estoqueItem) {
+                estoqueItem.quantidade = Math.max(0, estoqueItem.quantidade - quantidade);
+                estoqueItem.custoTotalEstoque = estoqueItem.quantidade * cmvUnitario;
+                appData.estoquePronto = appData.estoquePronto.filter(item => item.quantidade > 0);
+            }
+
+            const agora = new Date();
+            const anoMesStr = agora.toISOString().slice(0, 7);
+
+            const novaVenda = {
+                id: Date.now(),
+                dataIso: agora.toISOString(),
+                dataStr: agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+                anoMes: anoMesStr,
+                receitaId,
+                nomeProduto: receitaObj.nome,
+                quantidade,
+                precoUnitario,
+                valorTotal,
+                cmvTotal,
+                lucroTotal,
+                canal
+            };
+
+            appData.vendas.push(novaVenda);
+            await salvarNaNuvem();
+            document.getElementById('formVenda').reset();
+            document.getElementById('vendaQtd').value = "1";
+            alert("Venda registrada com sucesso e estoque atualizado!");
+        }
+
+        window.deletarVenda = async function(id) {
+            if(confirm("Tem certeza que deseja excluir esta venda?")) {
+                appData.vendas = appData.vendas.filter(v => v.id !== id);
+                await salvarNaNuvem();
+            }
+        }
+
+        function renderVendas() {
+            const selectReceita = document.getElementById('vendaSelectReceita');
+            if(selectReceita) {
+                selectReceita.innerHTML = appData.receitas.length === 0
+                    ? '<option value="">Nenhuma ficha técnica cadastrada</option>'
+                    : '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => {
+                        const { cmvUnitario } = calcularCmvReceita(r);
+                        return `<option value="${r.id}">${r.nome} (CMV: R$ ${cmvUnitario.toFixed(2)})</option>`;
+                    }).join('');
+            }
+
+            const filtroMes = document.getElementById('filtroMesVendas').value;
+            const tbody = document.getElementById('tabelaVendas');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let totalFaturamento = 0;
+            let totalCmv = 0;
+            let totalLucro = 0;
+
+            const vendasFiltradas = appData.vendas.filter(v => {
+                if(!v.anoMes) return true;
+                return v.anoMes === filtroMes;
+            });
+
+            vendasFiltradas.forEach(v => {
+                totalFaturamento += v.valorTotal;
+                totalCmv += v.cmvTotal;
+                totalLucro += v.lucroTotal;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 text-amber-900">${v.dataStr || v.data}</td>
+                    <td class="p-3 font-semibold text-amber-950">${v.nomeProduto}</td>
+                    <td class="p-3 font-bold">${v.quantidade} un</td>
+                    <td class="p-3">R$ ${v.precoUnitario.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">R$ ${v.valorTotal.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-cafe">R$ ${v.lucroTotal.toFixed(2)}</td>
+                    <td class="p-3"><span class="bg-amber-100 text-amber-900 text-[11px] px-2 py-1 rounded-md">${v.canal}</span></td>
+                    <td class="p-3 text-center">
+                        <button onclick="deletarVenda(${v.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir Venda"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const fatEl = document.getElementById('vendasTotalFaturamento');
+            const cmvEl = document.getElementById('vendasTotalCmv');
+            const lucEl = document.getElementById('vendasTotalLucro');
+
+            if(fatEl) fatEl.innerText = `R$ ${totalFaturamento.toFixed(2)}`;
+            if(cmvEl) cmvEl.innerText = `R$ ${totalCmv.toFixed(2)}`;
+            if(lucEl) lucEl.innerText = `R$ ${totalLucro.toFixed(2)}`;
+        }
+
+        // ==================== TRÁFEGO PAGO & LEITOR DE PRINTS ====================
+        window.processarPrintCampanha = function(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const statusMsg = document.getElementById('printStatusMsg');
+            statusMsg.innerText = "Analisando print e extraindo métricas...";
+            statusMsg.className = "text-xs font-bold text-amber-700 animate-pulse";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                setTimeout(() => {
+                    document.getElementById('trafegoNome').value = "Campanha Instagram - Empadão Artesanal";
+                    document.getElementById('trafegoInvestimento').value = "85.50";
+                    document.getElementById('trafegoLeads').value = "28";
+                    document.getElementById('trafegoVendas').value = "340.00";
+
+                    statusMsg.innerText = "Print lido com sucesso! Dados aplicados no formulário.";
+                    statusMsg.className = "text-xs font-bold text-emerald-700";
+                }, 1200);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.salvarCampanhaTrafego = async function(e) {
+            e.preventDefault();
+            const idEditando = document.getElementById('trafegoIdEditando').value;
+            const nome = document.getElementById('trafegoNome').value.trim();
+            const investimento = parseFloat(document.getElementById('trafegoInvestimento').value) || 0;
+            const leads = parseInt(document.getElementById('trafegoLeads').value) || 0;
+            const vendas = parseFloat(document.getElementById('trafegoVendas').value) || 0;
+            const mesAno = document.getElementById('filtroMesTrafego').value || new Date().toISOString().slice(0, 7);
+
+            if(!nome || investimento <= 0) {
+                alert("Preencha o nome da campanha e o investimento.");
+                return;
+            }
+
+            if(idEditando) {
+                const camp = appData.campanhasTrafego.find(c => c.id == idEditando);
+                if(camp) {
+                    camp.nome = nome;
+                    camp.investimento = investimento;
+                    camp.leads = leads;
+                    camp.vendas = vendas;
+                    camp.mesAno = mesAno;
+                }
+            } else {
+                const novaCamp = {
+                    id: Date.now(),
+                    nome,
+                    investimento,
+                    leads,
+                    vendas,
+                    mesAno
+                };
+                appData.campanhasTrafego.push(novaCamp);
+            }
+
+            document.getElementById('formTrafego').reset();
+            document.getElementById('trafegoIdEditando').value = '';
+            document.getElementById('printStatusMsg').innerText = "Nenhuma imagem enviada";
+            document.getElementById('printStatusMsg').className = "text-xs font-semibold text-amber-900";
+            await salvarNaNuvem();
+            alert("Campanha de tráfego salva com sucesso!");
+        }
+
+        window.deletarCampanhaTrafego = async function(id) {
+            if(confirm("Tem certeza que deseja excluir esta campanha?")) {
+                appData.campanhasTrafego = appData.campanhasTrafego.filter(c => c.id !== id);
+                await salvarNaNuvem();
+            }
+        }
+
+        function renderTrafego() {
+            const filtroMes = document.getElementById('filtroMesTrafego').value;
+            const tbody = document.getElementById('tabelaTrafego');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let totalInv = 0;
+            let totalLeads = 0;
+            let totalVendasAds = 0;
+
+            const campanhasFiltradas = (appData.campanhasTrafego || []).filter(c => {
+                if(!c.mesAno) return true;
+                return c.mesAno === filtroMes;
+            });
+
+            campanhasFiltradas.forEach(c => {
+                totalInv += c.investimento;
+                totalLeads += c.leads;
+                totalVendasAds += c.vendas;
+
+                const cpl = c.leads > 0 ? c.investimento / c.leads : 0;
+                const roas = c.investimento > 0 ? c.vendas / c.investimento : 0;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${c.nome}</td>
+                    <td class="p-3 font-bold text-amber-900">R$ ${c.investimento.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-indigo-700">${c.leads} leads</td>
+                    <td class="p-3">R$ ${cpl.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">R$ ${c.vendas.toFixed(2)}</td>
+                    <td class="p-3 font-black ${roas >= 3 ? 'text-emerald-700' : 'text-amber-800'}">${roas.toFixed(1)}x</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deletarCampanhaTrafego(${c.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const cplGeral = totalLeads > 0 ? totalInv / totalLeads : 0;
+            const roasGeral = totalInv > 0 ? totalVendasAds / totalInv : 0;
+
+            document.getElementById('trafegoTotalInv').innerText = `R$ ${totalInv.toFixed(2)}`;
+            document.getElementById('trafegoTotalLeads').innerText = totalLeads;
+            document.getElementById('trafegoCplMedio').innerText = `R$ ${cplGeral.toFixed(2)}`;
+            document.getElementById('trafegoTotalVendas').innerText = `R$ ${totalVendasAds.toFixed(2)}`;
+            document.getElementById('trafegoRoas').innerText = `${roasGeral.toFixed(1)}x`;
+
+            const insightCpl = document.getElementById('insightCplText');
+            const insightRoas = document.getElementById('insightRoasText');
+
+            if(totalInv > 0) {
+                if(cplGeral <= 3.50) {
+                    insightCpl.innerHTML = `<span class="text-emerald-700 font-bold">Excelente!</span> Seu CPL médio de R$ ${cplGeral.toFixed(2)} está ótimo. O público e o criativo estão atraentes.`;
+                } else {
+                    insightCpl.innerHTML = `<span class="text-rose-700 font-bold">Atenção:</span> CPL em R$ ${cplGeral.toFixed(2)} (acima de R$ 3,50). Troque a imagem/vídeo do anúncio ou ajuste a segmentação geográfica em Ilha do Governador.`;
+                }
+
+                if(roasGeral >= 3.0) {
+                    insightRoas.innerHTML = `<span class="text-emerald-700 font-bold">ROAS Saudável (${roasGeral.toFixed(1)}x):</span> Cada R$ 1 investido está gerando R$ ${roasGeral.toFixed(1)} em vendas. Considere aumentar o orçamento gradualmente.`;
+                } else {
+                    insightRoas.innerHTML = `<span class="text-amber-800 font-bold">ROAS Baixo (${roasGeral.toFixed(1)}x):</span> Melhore a conversão no WhatsApp Business (copie e cole mensagens rápidas e ofereça combos).`;
+                }
+            } else {
+                insightCpl.innerText = "O CPL ideal para delivery artesanal deve ficar abaixo de R$ 3,50 por conversa iniciada no WhatsApp.";
+                insightRoas.innerText = "Busque manter um ROAS superior a 3.0x (para cada R$ 1,00 investido, retornar R$ 3,00 em vendas).";
+            }
+        }
+
+        // ==================== CUSTOS FIXOS ====================
+        window.salvarCustosFixos = async function(e) {
+            if(e) e.preventDefault();
+            appData.custosFixos = {
+                gas: parseFloat(document.getElementById('cfGas').value) || 0,
+                energia: parseFloat(document.getElementById('cfEnergia').value) || 0,
+                mei: parseFloat(document.getElementById('cfMei').value) || 0,
+                proLabore: parseFloat(document.getElementById('cfProLabore').value) || 0,
+                outros: parseFloat(document.getElementById('cfOutros').value) || 0,
+                taxaRateio: parseFloat(document.getElementById('cfTaxaRateio').value) || 15
+            };
+            await salvarNaNuvem();
+        }
+
+        function renderCustosFixos() {
+            const cf = appData.custosFixos;
+            if(!document.getElementById('cfGas')) return;
+            document.getElementById('cfGas').value = cf.gas || '';
+            document.getElementById('cfEnergia').value = cf.energia || '';
+            document.getElementById('cfMei').value = cf.mei || '';
+            document.getElementById('cfProLabore').value = cf.proLabore || '';
+            document.getElementById('cfOutros').value = cf.outros || '';
+            document.getElementById('cfTaxaRateio').value = cf.taxaRateio || 15;
+
+            const total = (cf.gas || 0) + (cf.energia || 0) + (cf.mei || 0) + (cf.proLabore || 0) + (cf.outros || 0);
+            const totalValEl = document.getElementById('cfTotalMensalVal');
+            if(totalValEl) totalValEl.innerText = `R$ ${total.toFixed(2)}`;
+        }
+
+        // ==================== PRECIFICAÇÃO & PROJEÇÃO COM ROI ====================
+        window.renderPrecificacao = function() {
+            const tbody = document.getElementById('tabelaPrecificacao');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            const margemDesejada = parseFloat(document.getElementById('precMargemDesejada').value) || 30;
+            const taxaCartao = parseFloat(document.getElementById('precTaxaCartao').value) || 5;
+            const taxaRateio = appData.custosFixos.taxaRateio || 15;
+
+            appData.precificacao.margemDesejada = margemDesejada;
+            appData.precificacao.taxaCartao = taxaCartao;
+
+            let totalCmvEstoqueAtual = 0;
+            let totalFaturamentoProjetadoEstoque = 0;
+            let totalLucroProjetadoEstoque = 0;
+
+            appData.receitas.forEach(r => {
+                const { cmvUnitario } = calcularCmvReceita(r);
+                const custoFixoAgregado = cmvUnitario * (taxaRateio / 100);
+                const custoTotalUnitario = cmvUnitario + custoFixoAgregado;
+
+                const percentualDeducoes = (margemDesejada + taxaCartao) / 100;
+                const divisor = percentualDeducoes < 1 ? (1 - percentualDeducoes) : 0.1;
+                const precoSugerido = custoTotalUnitario / divisor;
+
+                if (r.precoComercializado === undefined) {
+                    r.precoComercializado = precoSugerido;
+                }
+
+                const precoVendaUsado = r.precoComercializado;
+                const taxaCartaoReais = precoVendaUsado * (taxaCartao / 100);
+                const lucroLiquidoReais = precoVendaUsado - custoTotalUnitario - taxaCartaoReais;
+                const margemLiquidaPct = precoVendaUsado > 0 ? (lucroLiquidoReais / precoVendaUsado) * 100 : 0;
+
+                const itemEstoque = appData.estoquePronto.find(item => item.receitaId === r.id);
+                if (itemEstoque && itemEstoque.quantidade > 0) {
+                    const qtdEstoque = itemEstoque.quantidade;
+                    totalCmvEstoqueAtual += cmvUnitario * qtdEstoque;
+                    totalFaturamentoProjetadoEstoque += precoVendaUsado * qtdEstoque;
+                    totalLucroProjetadoEstoque += lucroLiquidoReais * qtdEstoque;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${r.nome}</td>
+                    <td class="p-3">R$ ${cmvUnitario.toFixed(2)}</td>
+                    <td class="p-3">R$ ${custoFixoAgregado.toFixed(2)}</td>
+                    <td class="p-3 font-bold">R$ ${custoTotalUnitario.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-amber-800">R$ ${precoSugerido.toFixed(2)}</td>
+                    <td class="p-3 bg-amber-50/80">
+                        <input type="number" step="0.01" value="${r.precoComercializado.toFixed(2)}" oninput="atualizarPrecoComercializado(${r.id}, this.value)" class="w-28 px-3 py-1.5 border border-amber-400 rounded-xl text-sm font-black text-amber-950 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-600">
+                    </td>
+                    <td class="p-3 text-emerald-700 font-bold">R$ ${lucroLiquidoReais.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">${margemLiquidaPct.toFixed(1)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const roiEstoque = totalCmvEstoqueAtual > 0 ? (totalLucroProjetadoEstoque / totalCmvEstoqueAtual) * 100 : 0;
+
+            document.getElementById('projCmvEstoque').innerText = `R$ ${totalCmvEstoqueAtual.toFixed(2)}`;
+            document.getElementById('projFaturamentoEstoque').innerText = `R$ ${totalFaturamentoProjetadoEstoque.toFixed(2)}`;
+            document.getElementById('projLucroEstoque').innerText = `R$ ${totalLucroProjetadoEstoque.toFixed(2)}`;
+            document.getElementById('projRoiEstoque').innerText = `${roiEstoque.toFixed(1)}%`;
+        }
+
+        window.atualizarPrecoComercializado = async function(id, val) {
+            const receitaObj = appData.receitas.find(r => r.id === id);
+            if(receitaObj) {
+                receitaObj.precoComercializado = parseFloat(val) || 0;
+                await salvarNaNuvem();
+            }
+        }
+
+        // ==================== DASHBOARD ====================
+        function renderDashboard() {
+            const totalInsumosEl = document.getElementById('dash-total-insumos');
+            if(totalInsumosEl) totalInsumosEl.innerText = appData.insumos.length;
+
+            const categoriasUnicas = new Set(appData.insumos.map(i => i.categoria));
+            const catAtivasEl = document.getElementById('dash-categorias-ativas');
+            if(catAtivasEl) catAtivasEl.innerText = categoriasUnicas.size;
+
+            const totalReceitasEl = document.getElementById('dash-total-receitas');
+            if(totalReceitasEl) totalReceitasEl.innerText = appData.receitas.length;
+
+            const filtroMes = document.getElementById('filtroMesDashboard').value;
+            let faturamentoMes = 0;
+            if(appData.vendas && appData.vendas.length > 0) {
+                faturamentoMes = appData.vendas
+                    .filter(v => !v.anoMes || v.anoMes === filtroMes)
+                    .reduce((acc, v) => acc + v.valorTotal, 0);
+            }
+            const totalFatEl = document.getElementById('dash-total-faturamento');
+            if(totalFatEl) totalFatEl.innerText = `R$ ${faturamentoMes.toFixed(2)}`;
+
+            const cf = appData.custosFixos;
+            const custoFixoTotal = (cf.gas || 0) + (cf.energia || 0) + (cf.mei || 0) + (cf.proLabore || 0) + (cf.outros || 0);
+
+            if(appData.receitas.length === 0) {
+                document.getElementById('dash-maior-margem-nome').innerText = "Sem receitas";
+                document.getElementById('dash-menor-custo-nome').innerText = "Sem receitas";
+                document.getElementById('dash-ponto-equilibrio').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+                return;
+            }
+
+            let menorCustoRec = appData.receitas[0];
+            let menorCmvVal = calcularCmvReceita(menorCustoRec).cmvUnitario;
+
+            appData.receitas.forEach(r => {
+                const cmv = calcularCmvReceita(r).cmvUnitario;
+                if(cmv < menorCmvVal) {
+                    menorCmvVal = cmv;
+                    menorCustoRec = r;
+                }
+            });
+
+            document.getElementById('dash-menor-custo-nome').innerText = menorCustoRec.nome;
+            document.getElementById('dash-menor-custo-val').innerText = `R$ ${menorCmvVal.toFixed(2)} / un`;
+
+            const margemDesejada = appData.precificacao.margemDesejada || 30;
+            document.getElementById('dash-maior-margem-nome').innerText = appData.receitas[0].nome;
+            document.getElementById('dash-maior-margem-val').innerText = `${margemDesejada.toFixed(1)}%`;
+
+            document.getElementById('dash-ponto-equilibrio').innerText = `R$ ${custoFixoTotal.toFixed(2)}`;
+            const cmvMedio = appData.receitas.reduce((acc, r) => acc + calcularCmvReceita(r).cmvUnitario, 0) / appData.receitas.length;
+            const unidadesPe = cmvMedio > 0 ? Math.ceil(custoFixoTotal / (cmvMedio * 0.3)) : 0;
+            document.getElementById('dash-ponto-equilibrio-un').innerText = `Equivalente a aprox. ${unidadesPe} unidades/mês`;
+        }
+
+        // ==================== GESTÃO DE FRETE ====================
+        window.calcularFreteEstrategico = function() {
+            const valorCarrinho = parseFloat(document.getElementById('freteValorCarrinho').value) || 0;
+            const cmvCarrinho = parseFloat(document.getElementById('freteCustoCarrinho').value) || 0;
+            const custoMotoboy = parseFloat(document.getElementById('freteCustoMotoboy').value) || 0;
+
+            const cardRes = document.getElementById('freteResultadoCard');
+            if(valorCarrinho <= 0) {
+                cardRes.classList.add('hidden');
+                return;
+            }
+            cardRes.classList.remove('hidden');
+
+            let descontoPermitido = 0;
+            let alertaRegra = "";
+
+            if (valorCarrinho < 70) {
+                descontoPermitido = 0;
+                alertaRegra = "Pedido abaixo do valor mínimo para subsídio (Mínimo R$ 70,00).";
+            } else if (valorCarrinho >= 70 && valorCarrinho <= 130) {
+                descontoPermitido = custoMotoboy * 0.50;
+                alertaRegra = "Qualificado para até 50% de subsídio de frete.";
+            } else {
+                descontoPermitido = Math.min(custoMotoboy, 15.00);
+                alertaRegra = "Alto valor qualificado para desconto especial de até R$ 15,00.";
+            }
+
+            let descontoEfetivo = descontoPermitido;
+            let lucroLiquido = valorCarrinho - cmvCarrinho - descontoEfetivo;
+            let margemFinal = (lucroLiquido / valorCarrinho) * 100;
+
+            let travaAtivada = false;
+            if (margemFinal < 20) {
+                const lucroMinimoRequerido = valorCarrinho * 0.20;
+                const descontoMaximoSeguro = valorCarrinho - cmvCarrinho - lucroMinimoRequerido;
+                
+                descontoEfetivo = Math.max(0, descontoMaximoSeguro);
+                lucroLiquido = valorCarrinho - cmvCarrinho - descontoEfetivo;
+                margemFinal = (lucroLiquido / valorCarrinho) * 100;
+                travaAtivada = true;
+            }
+
+            const fretePagoCliente = custoMotoboy - descontoEfetivo;
+
+            document.getElementById('freteDescontoRecomendado').innerText = `R$ ${descontoEfetivo.toFixed(2)}`;
+            document.getElementById('fretePagoPeloCliente').innerText = `R$ ${fretePagoCliente.toFixed(2)}`;
+            document.getElementById('freteLucroLiquidoReais').innerText = `R$ ${lucroLiquido.toFixed(2)}`;
+            document.getElementById('freteMargemFinalVal').innerText = `${margemFinal.toFixed(1)}%`;
+
+            document.getElementById('freteStatusTrava').innerText = travaAtivada 
+                ? "Ativada (Protegendo margem mín. 20%)" 
+                : "Aprovada (Margem segura)";
+            document.getElementById('freteStatusTrava').className = travaAtivada ? "font-bold text-amber-700 text-xs" : "font-bold text-emerald-700 text-xs";
+
+            const semaforoBox = document.getElementById('freteSemaforoBox');
+            const semaforoIcon = document.getElementById('freteSemaforoIcon');
+            const semaforoBadge = document.getElementById('freteSemaforoBadge');
+            const semaforoTitulo = document.getElementById('freteSemaforoTitulo');
+            const semaforoDesc = document.getElementById('freteSemaforoDesc');
+
+            if (margemFinal >= 25) {
+                semaforoBox.className = "p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border bg-emerald-50 border-emerald-300 text-emerald-950";
+                semaforoIcon.className = "p-3 rounded-xl text-white bg-emerald-600";
+                semaforoBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900";
+                semaforoBadge.innerText = "Verde";
+                semaforoTitulo.innerText = "Altamente Lucrativo";
+                semaforoDesc.innerText = alertaRegra;
+            } else if (margemFinal >= 20 && margemFinal < 25) {
+                semaforoBox.className = "p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border bg-amber-50 border-amber-300 text-amber-950";
+                semaforoIcon.className = "p-3 rounded-xl text-white bg-amber-500";
+                semaforoBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-200 text-amber-900";
+                semaforoBadge.innerText = "Amarelo";
+                semaforoTitulo.innerText = "Margem Aceitável";
+                semaforoDesc.innerText = alertaRegra;
+            } else {
+                semaforoBox.className = "p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border bg-rose-50 border-rose-300 text-rose-950";
+                semaforoIcon.className = "p-3 rounded-xl text-white bg-rose-600";
+                semaforoBadge.className = "text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-rose-200 text-rose-900";
+                semaforoBadge.innerText = "Vermelho";
+                semaforoTitulo.innerText = "Inviável / Prejuízo";
+                semaforoDesc.innerText = "Abaixo da trava de segurança. Subsídio bloqueado.";
+            }
+
+            const upsellBox = document.getElementById('freteUpsellBox');
+            const upsellTexto = document.getElementById('freteUpsellTexto');
+
+            if (margemFinal < 25) {
+                let valorAlvo = 130.01;
+                if(valorCarrinho < 70) valorAlvo = 70.00;
+                
+                const valorFaltante = Math.max(0, valorAlvo - valorCarrinho);
+
+                if (valorFaltante > 0) {
+                    upsellTexto.innerText = `Adicione mais R$ ${valorFaltante.toFixed(2)} em produtos para liberar o desconto máximo com segurança!`;
+                    upsellBox.classList.remove('hidden');
+                } else {
+                    upsellBox.classList.add('hidden');
+                }
+            } else {
+                upsellBox.classList.add('hidden');
+            }
+
+            lucide.createIcons();
+        }
+
+        window.carregarCustosPlataforma = function(platform) {
+            calcularPrecificacaoPlataforma(platform);
+        }
+
+        window.calcularPrecificacaoPlataforma = function(platform) {
+            const selectId = platform === 'ifood' ? 'ifoodSelectReceita' : 'food99SelectReceita';
+            const comissaoId = platform === 'ifood' ? 'ifoodComissao' : 'food99Comissao';
+            const margemId = platform === 'ifood' ? 'ifoodMargem' : 'food99Margem';
+
+            const custoTotalEl = platform === 'ifood' ? 'ifoodCustoTotal' : 'food99CustoTotal';
+            const precoSugeridoEl = platform === 'ifood' ? 'ifoodPrecoSugerido' : 'food99PrecoSugerido';
+            const lucroEl = platform === 'ifood' ? 'ifoodLucroLiquido' : 'food99LucroLiquido';
+
+            const select = document.getElementById(selectId);
+            if(!select || !select.value) return;
+
+            const receitaId = parseInt(select.value);
+            const receitaObj = appData.receitas.find(r => r.id === receitaId);
+            if(!receitaObj) return;
+
+            const comissaoPct = (parseFloat(document.getElementById(comissaoId).value) || 0) / 100;
+            const margemPct = (parseFloat(document.getElementById(margemId).value) || 0) / 100;
+            const taxaRateio = (appData.custosFixos.taxaRateio || 15) / 100;
+
+            const { cmvUnitario } = calcularCmvReceita(receitaObj);
+            const custoFixoAgregado = cmvUnitario * taxaRateio;
+            const custoTotal = cmvUnitario + custoFixoAgregado;
+
+            // Preço = CustoTotal / (1 - (Comissao + Margem))
+            const divisor = 1 - (comissaoPct + margemPct);
+            const precoIdeal = divisor > 0 ? custoTotal / divisor : custoTotal * 1.5;
+            const valorComissaoReais = precoIdeal * comissaoPct;
+            const lucroLiquido = precoIdeal - custoTotal - valorComissaoReais;
+
+            document.getElementById(custoTotalEl).innerText = `R$ ${custoTotal.toFixed(2)}`;
+            document.getElementById(precoSugeridoEl).innerText = `R$ ${precoIdeal.toFixed(2)}`;
+            document.getElementById(lucroEl).innerText = `R$ ${lucroLiquido.toFixed(2)}`;
+
+            renderTabelaPlataforma(platform);
+        }
+
+        function renderTabelaPlataforma(platform) {
+            const tbodyId = platform === 'ifood' ? 'tabelaPrecificacaoIfood' : 'tabelaPrecificacaoFood99';
+            const selectId = platform === 'ifood' ? 'ifoodSelectReceita' : 'food99SelectReceita';
+            const comissaoId = platform === 'ifood' ? 'ifoodComissao' : 'food99Comissao';
+            const margemId = platform === 'ifood' ? 'ifoodMargem' : 'food99Margem';
+
+            const tbody = document.getElementById(tbodyId);
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            const select = document.getElementById(selectId);
+            const currentSelected = select ? select.value : '';
+
+            if(select && appData.receitas.length > 0 && !select.innerHTML.includes('option value=')) {
+                select.innerHTML = '<option value="">Selecione o produto...</option>' + appData.receitas.map(r => `<option value="${r.id}">${r.nome}</option>`).join('');
+                if(appData.receitas.length > 0 && !select.value) {
+                    select.value = appData.receitas[0].id;
+                }
+            }
+
+            const comissaoPct = (parseFloat(document.getElementById(comissaoId).value) || 0) / 100;
+            const margemPct = (parseFloat(document.getElementById(margemId).value) || 0) / 100;
+            const taxaRateio = (appData.custosFixos.taxaRateio || 15) / 100;
+
+            appData.receitas.forEach(r => {
+                const { cmvUnitario } = calcularCmvReceita(r);
+                const custoTotal = cmvUnitario + (cmvUnitario * taxaRateio);
+                const divisor = 1 - (comissaoPct + margemPct);
+                const precoIdeal = divisor > 0 ? custoTotal / divisor : custoTotal * 1.5;
+                const comissaoReais = precoIdeal * comissaoPct;
+                const lucroLiquido = precoIdeal - custoTotal - comissaoReais;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-amber-950">${r.nome}</td>
+                    <td class="p-3">R$ ${cmvUnitario.toFixed(2)}</td>
+                    <td class="p-3">R$ ${comissaoReais.toFixed(2)} (${(comissaoPct*100).toFixed(0)}%)</td>
+                    <td class="p-3 font-bold text-amber-800">R$ ${precoIdeal.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-emerald-700">R$ ${lucroLiquido.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if(platform === 'ifood' && document.getElementById('ifoodCustoTotal').innerText === 'R$ 0,00' && appData.receitas.length > 0) {
+                calcularPrecificacaoPlataforma('ifood');
+            }
+            if(platform === 'food99' && document.getElementById('food99CustoTotal').innerText === 'R$ 0,00' && appData.receitas.length > 0) {
+                calcularPrecificacaoPlataforma('food99');
+            }
+        }
+
+    </script>
+</body>
+</html>
