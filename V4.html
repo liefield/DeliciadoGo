@@ -1,0 +1,2230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>FleetManagerPro</title>
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FleetManagerPro">
+    <meta name="theme-color" content="#0f172a">
+    
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2.0">
+    <link rel="apple-touch-icon" sizes="152x152" href="./apple-touch-icon-152x152.png?v=2.0">
+    <link rel="apple-touch-icon" sizes="167x167" href="./apple-touch-icon-167x167.png?v=2.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon-180x180.png?v=2.0">
+    <link rel="icon" type="image/png" href="./icon.png?v=2.0">
+    <link rel="shortcut icon" href="./icon.png?v=2.0">
+    <link rel="manifest" href="./manifest.json?v=2.0">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .active-tab { background-color: #2563EB !important; color: #FFFFFF !important; font-weight: 700; }
+        .plate-tag { background: #000; color: #fff; border: 1px solid #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; letter-spacing: 1px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- TELA DE AUTENTICAÇÃO SEGURA (SMART LOGIN) -->
+    <div id="authOverlay" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-600 rounded-xl text-white font-bold text-xl flex items-center justify-center">FM</div>
+                <div>
+                    <h2 id="authModalTitle" class="text-lg sm:text-xl font-extrabold text-white">Autenticação FleetManagerPro</h2>
+                    <p id="authModalSubtitle" class="text-xs text-slate-400">Ambiente Criptografado UID</p>
+                </div>
+            </div>
+            <div id="authErrorMsg" class="hidden bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-lg text-xs font-semibold leading-relaxed"></div>
+            <div id="authSuccessMsg" class="hidden bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3 rounded-lg text-xs font-semibold leading-relaxed"></div>
+            
+            <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">E-mail Profissional</label>
+                    <input type="email" id="authEmail" required placeholder="seu@email.com" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:border-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-400">Senha de Acesso</label>
+                        <button type="button" onclick="handlePasswordReset()" class="text-xs text-amber-400 hover:underline font-semibold">Esqueceu a senha?</button>
+                    </div>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:border-blue-500 focus:outline-none">
+                </div>
+                <button type="submit" id="authSubmitBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm shadow transition-all flex justify-center items-center gap-2">
+                    <span id="authBtnText">Autenticar no Sistema</span>
+                </button>
+            </form>
+
+            <div class="text-center pt-2 border-t border-slate-800 flex flex-col gap-2">
+                <p id="authToggleText" class="text-xs text-slate-400">
+                    Ainda não possui credencial? 
+                    <button type="button" onclick="toggleAuthMode()" class="text-blue-400 hover:underline font-bold ml-1">Solicitar Cadastro</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="appContainer" class="hidden">
+        <header class="bg-slate-900 text-slate-100 shadow-md sticky top-0 z-40 border-b border-slate-800">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="flex items-center justify-between w-full sm:w-auto">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-blue-600 rounded-lg text-white font-bold text-base">FM</div>
+                        <div>
+                            <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-white">FleetManagerPro</h1>
+                            <p class="text-[10px] sm:text-xs text-slate-400 font-medium">Gestão Operacional, DRE & Compliance</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="masterAdminPanel" class="hidden flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl w-full sm:w-auto justify-center">
+                    <span class="text-xs font-bold text-amber-400 flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Admin:</span>
+                    <select id="masterUserSelect" onchange="switchMasterTargetUser(this.value)" class="bg-slate-900 text-xs text-white border border-slate-700 rounded-lg px-2 py-1 focus:outline-none">
+                        <option value="">Meu Perfil Principal</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                    <span id="userEmailDisplay" class="text-[11px] text-slate-400 bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700 truncate max-w-[180px] sm:max-w-none"></span>
+                    <button onclick="logout()" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 text-xs font-bold px-3 py-1.5 rounded-lg transition-all">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <nav class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-[65px] sm:top-[73px] z-30 overflow-x-auto shadow-sm">
+            <div class="max-w-7xl mx-auto px-2 flex whitespace-nowrap gap-1.5 py-2.5" id="navTabs"></div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto px-3 sm:px-4 py-5 space-y-6">
+            <section id="sec-dashboard" class="tab-content space-y-6">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+                    <div class="bg-slate-800 p-4 sm:p-5 rounded-xl border-l-4 border-blue-500 shadow-sm border border-slate-700">
+                        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Frota Total</p>
+                        <p id="dashTotalVeiculos" class="text-2xl sm:text-3xl font-black text-white mt-1 sm:mt-2">0</p>
+                        <p class="text-[10px] sm:text-xs text-blue-400 mt-1 font-medium" id="dashAtivosSub">0 Ativos</p>
+                    </div>
+                    <div class="bg-slate-800 p-4 sm:p-5 rounded-xl border-l-4 border-emerald-500 shadow-sm border border-slate-700">
+                        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Receita Acumulada</p>
+                        <p id="dashTotalReceitas" class="text-xl sm:text-3xl font-black text-emerald-400 mt-1 sm:mt-2 truncate">R$ 0,00</p>
+                        <p class="text-[10px] sm:text-xs text-slate-400 mt-1">Locação + App</p>
+                    </div>
+                    <div class="bg-slate-800 p-4 sm:p-5 rounded-xl border-l-4 border-rose-500 shadow-sm border border-slate-700">
+                        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Custos</p>
+                        <p id="dashTotalDeducoes" class="text-xl sm:text-3xl font-black text-rose-400 mt-1 sm:mt-2 truncate">R$ 0,00</p>
+                        <p class="text-[10px] sm:text-xs text-slate-400 mt-1">Manutenção + Taxas</p>
+                    </div>
+                    <div class="bg-slate-800 p-4 sm:p-5 rounded-xl border-l-4 border-indigo-500 shadow-sm border border-slate-700">
+                        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Imobilizado</p>
+                        <p id="dashCapitalImobilizado" class="text-xl sm:text-3xl font-black text-indigo-300 mt-1 sm:mt-2 truncate">R$ 0,00</p>
+                        <p class="text-[10px] sm:text-xs text-slate-400 mt-1">Ativos Atuais</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
+                    <h3 class="font-bold text-white text-sm sm:text-base flex items-center gap-2"><i data-lucide="file-spreadsheet" class="w-5 h-5 text-blue-400"></i> DRE Consolidado da Frota</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse min-w-[500px]">
+                            <thead>
+                                <tr class="bg-slate-900 text-slate-400 border-b border-slate-700 text-[11px] uppercase">
+                                    <th class="p-3">Indicador Financeiro</th>
+                                    <th class="p-3 text-right">Montante Consolidado</th>
+                                    <th class="p-3 text-right">% s/ Receita Bruta</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-700/50 text-xs">
+                                <tr><td class="p-3 font-semibold text-white">(=) Receita Bruta Total</td><td id="dreTableRev" class="p-3 text-right font-bold text-emerald-400 text-sm">R$ 0,00</td><td class="p-3 text-right text-slate-300">100%</td></tr>
+                                <tr><td class="p-3 text-slate-400">(-) Total Manutenções & Reparos</td><td id="dreTableMaint" class="p-3 text-right font-bold text-rose-400 text-sm">R$ 0,00</td><td id="drePctMaint" class="p-3 text-right text-slate-300">0%</td></tr>
+                                <tr><td class="p-3 text-slate-400">(-) IPVA & Seguro / Tributos Fixos</td><td id="dreTableTax" class="p-3 text-right font-bold text-rose-400 text-sm">R$ 0,00</td><td id="drePctTax" class="p-3 text-right text-slate-300">0%</td></tr>
+                                <tr class="bg-slate-900/50 font-bold"><td class="p-3 text-white">(=) Resultado Líquido em Caixa</td><td id="dreTableNet" class="p-3 text-right font-black text-blue-400 text-base">R$ 0,00</td><td id="drePctNet" class="p-3 text-right text-blue-400">0%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm">
+                        <h3 class="font-bold text-white text-sm sm:text-base mb-4">Distribuição da Frota por Status</h3>
+                        <div class="relative h-56 sm:h-64 flex justify-center"><canvas id="chartStatus"></canvas></div>
+                    </div>
+                    <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm">
+                        <h3 class="font-bold text-white text-sm sm:text-base mb-4">Resultado Líquido por Veículo (R$)</h3>
+                        <div class="relative h-56 sm:h-64"><canvas id="chartFinance"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-veiculos" class="tab-content hidden space-y-6">
+                <div class="flex justify-between items-center bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white">Gestão da Frota</h2>
+                        <p class="text-xs text-slate-400">Cadastre e acompanhe status da frota.</p>
+                    </div>
+                    <button onclick="openVehicleModal()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-lg text-sm shadow flex items-center justify-center gap-2 transition-all">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Novo Veículo
+                    </button>
+                </div>
+
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center flex-wrap gap-3">
+                        <h3 class="font-bold text-white text-sm">Veículos Cadastrados</h3>
+                        <input type="text" id="searchFleet" placeholder="Buscar por modelo ou placa..." onkeyup="renderFleet()" class="w-full sm:w-64 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm min-w-[700px]">
+                            <thead>
+                                <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700 text-[11px] uppercase tracking-wider">
+                                    <th class="p-3">Placa</th>
+                                    <th class="p-3">Modelo / Versão</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Licenciamento</th>
+                                    <th class="p-3">Receita Acum.</th>
+                                    <th class="p-3">Manutenção (-)</th>
+                                    <th class="p-3">Retorno Líquido</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fleetTableBody" class="divide-y divide-slate-700/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-motoristas" class="tab-content hidden space-y-6">
+                <div class="flex justify-between items-center bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white">Cadastro de Motoristas</h2>
+                        <p class="text-xs text-slate-400">Gerencie a documentação e dados dos condutores.</p>
+                    </div>
+                    <button onclick="openDriverModal()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-lg text-sm shadow flex items-center justify-center gap-2 transition-all">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i> Novo Motorista
+                    </button>
+                </div>
+
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center flex-wrap gap-3">
+                        <h3 class="font-bold text-white text-sm">Condutores Cadastrados</h3>
+                        <input type="text" id="searchDriver" placeholder="Buscar por nome ou CPF..." onkeyup="renderDrivers()" class="w-full sm:w-64 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm min-w-[700px]">
+                            <thead>
+                                <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700 text-[11px] uppercase tracking-wider">
+                                    <th class="p-3">Nome</th>
+                                    <th class="p-3">CPF</th>
+                                    <th class="p-3">Data Nasc.</th>
+                                    <th class="p-3">Categoria CNH</th>
+                                    <th class="p-3">Documento CNH</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="driversTableBody" class="divide-y divide-slate-700/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <div id="dynamicVehicleSections"></div>
+
+            <section id="sec-maintenance" class="tab-content hidden space-y-6">
+                <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-3 border-b border-slate-700 pb-4">
+                        <div>
+                            <h3 class="font-bold text-white text-base sm:text-lg">Cronograma de Manutenção Preventiva Estratégica</h3>
+                            <p class="text-xs text-slate-400 mt-1">Diretriz padrão de revisões e substituição de componentes.</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-[500px]">
+                        <table class="w-full text-left text-sm border-collapse min-w-[500px]">
+                            <thead>
+                                <tr class="bg-slate-900/90 text-slate-400 border-b border-slate-700 text-xs uppercase sticky top-0">
+                                    <th class="p-3">Quilometragem</th>
+                                    <th class="p-3">Ciclo / Grupo de Serviço</th>
+                                    <th class="p-3">Principais Itens Inclusos na Revisão</th>
+                                    <th class="p-3 text-right">Custo Ref.</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-700/50 text-xs" id="maintenanceTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-roi" class="tab-content hidden space-y-6">
+                <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm space-y-6">
+                    <div>
+                        <h3 class="font-bold text-white text-base sm:text-lg flex items-center gap-2"><i data-lucide="calculator" class="w-5 h-5 text-blue-400"></i> Simulador Avançado de ROI & Financiamento (Carros)</h3>
+                        <p class="text-xs text-slate-400">Alavancagem: A receita semanal paga a parcela e todos os custos fixos.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Valor Total / Venal (R$)</label>
+                            <input type="number" id="simCarTotal" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="30000" oninput="calculateCarROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Entrada em Dinheiro (R$)</label>
+                            <input type="number" id="simCarDownPayment" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="15000" oninput="calculateCarROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Prazo Financiamento (Meses)</label>
+                            <input type="number" id="simCarMonths" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="24" oninput="calculateCarROI()">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 space-y-3">
+                        <div class="flex items-center gap-4 text-xs font-bold text-slate-300 flex-wrap">
+                            <span class="text-blue-400 flex items-center gap-1"><i data-lucide="sliders" class="w-4 h-4"></i> Mapeamento:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="carCalcMode" value="rate" checked onchange="toggleCarCalcMode('rate')" class="accent-blue-500">
+                                Taxa de Juros (% a.a.)
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="carCalcMode" value="installment" onchange="toggleCarCalcMode('installment')" class="accent-amber-500">
+                                Parcela do Vendedor
+                            </label>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                            <div id="simCarRateGroup">
+                                <label class="block text-xs font-bold text-slate-400 mb-1">Taxa de Juros Anual (%)</label>
+                                <input type="number" step="0.1" id="simCarInterest" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="12.0" oninput="calculateCarROI()">
+                            </div>
+                            <div id="simCarInstallmentGroup" class="hidden">
+                                <label class="block text-xs font-bold text-amber-400 mb-1">Valor da Parcela (R$)</label>
+                                <input type="number" step="0.01" id="simCarOfferedInst" class="w-full px-3 py-2 bg-slate-900 border border-amber-500/50 rounded-lg text-sm text-white font-bold" value="1200" oninput="calculateCarROI()">
+                            </div>
+                            
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[11px] text-slate-400 font-bold uppercase">Taxa Real Embutida</p>
+                                    <p id="simCarCalculatedRateDisplay" class="text-sm font-black text-amber-400 mt-0.5">-- % a.m.</p>
+                                </div>
+                                <span id="simCarRateBadge" class="text-[10px] font-bold px-2 py-1 rounded bg-slate-700 text-slate-300">Calculando...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Aluguel Semanal (R$)</label>
+                            <input type="number" id="simCarRent" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="500" oninput="calculateCarROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Reserva Manut. (%)</label>
+                            <input type="number" id="simCarMaintPct" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="20" oninput="calculateCarROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-blue-400 mb-1">Seguro Mensal (R$)</label>
+                            <input type="number" id="simCarInsurance" class="w-full px-3 py-2 bg-slate-900 border border-blue-500/40 rounded-lg text-sm text-white" value="200" oninput="calculateCarROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-indigo-400 mb-1">IPVA (% a.a.)</label>
+                            <input type="number" step="0.1" id="simCarIPVALim" class="w-full px-3 py-2 bg-slate-900 border border-indigo-500/40 rounded-lg text-sm text-white" value="4.0" oninput="calcularIPVAPeloPercentual('car')">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-indigo-400 mb-1">IPVA Mensal (R$)</label>
+                            <input type="number" id="simCarIPVA" class="w-full px-3 py-2 bg-slate-900 border border-indigo-500/40 rounded-lg text-sm text-white" value="100" oninput="calculateCarROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Revenda (R$)</label>
+                            <input type="number" id="simCarResale" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="25000" oninput="calculateCarROI()">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 sm:p-5 rounded-xl border border-blue-500/30 space-y-4">
+                        <h4 class="font-bold text-blue-400 text-sm flex items-center gap-2"><i data-lucide="repeat" class="w-4 h-4"></i> Análise de Autofinanciamento Operacional (Carro)</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Receita Mensal</p><p id="simCarMonthlyRev" class="text-sm sm:text-base font-black text-emerald-400 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Manutenção (-)</p><p id="simCarMonthlyMaint" class="text-sm sm:text-base font-black text-rose-400 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Seguro + IPVA (-)</p><p id="simCarMonthlyFixedCosts" class="text-sm sm:text-base font-black text-rose-400 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Sobra Parcela</p><p id="simCarMonthlyAvail" class="text-sm sm:text-base font-black text-blue-300 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Parcela (-)</p><p id="simCarMonthlyInst" class="text-sm sm:text-base font-black text-amber-400 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Lucro / Mês</p><p id="simCarMonthlyNetCash" class="text-sm sm:text-base font-black text-emerald-400 mt-1">R$ 0,00</p></div>
+                        </div>
+                        <div id="simCarCoverageStatus" class="p-3 rounded-lg text-xs font-semibold"></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-700">
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><p class="text-xs font-bold text-slate-400 uppercase">Lucro Pós-Quitação (Livre)</p><p id="simCarPostPayoffMonthly" class="text-base sm:text-lg font-black text-emerald-400 mt-1">R$ 0,00</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><p id="simCarNetLabel" class="text-xs font-bold text-slate-400 uppercase">Resultado Acumulado (24M)</p><p id="simCarNet" class="text-base sm:text-lg font-black text-blue-400 mt-1">R$ 0,00</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><p class="text-xs font-bold text-slate-400 uppercase">ROI com Entrada</p><p id="simCarROIWithTotal" class="text-base sm:text-lg font-black text-indigo-400 mt-1">0%</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><p class="text-xs font-bold text-slate-400 uppercase">ROI s/ Entrada</p><p id="simCarROI" class="text-base sm:text-lg font-black text-cyan-400 mt-1">0%</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-roi-motos" class="tab-content hidden space-y-6">
+                <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm space-y-6">
+                    <div>
+                        <h3 class="font-bold text-white text-base sm:text-lg flex items-center gap-2"><i data-lucide="bike" class="w-5 h-5 text-emerald-400"></i> Simulador Avançado de ROI & Financiamento (Motos)</h3>
+                        <p class="text-xs text-slate-400">Simulação específica para frota de motocicletas.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Valor Total / Venal (R$)</label>
+                            <input type="number" id="simMotoTotal" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="16000" oninput="calculateMotoROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Entrada em Dinheiro (R$)</label>
+                            <input type="number" id="simMotoDownPayment" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="5000" oninput="calculateMotoROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Prazo Financiamento (Meses)</label>
+                            <input type="number" id="simMotoMonths" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="18" oninput="calculateMotoROI()">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 space-y-3">
+                        <div class="flex items-center gap-4 text-xs font-bold text-slate-300 flex-wrap">
+                            <span class="text-emerald-400 flex items-center gap-1"><i data-lucide="sliders" class="w-4 h-4"></i> Mapeamento (Moto):</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="motoCalcMode" value="rate" checked onchange="toggleMotoCalcMode('rate')" class="accent-emerald-500">
+                                Taxa de Juros (% a.a.)
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="motoCalcMode" value="installment" onchange="toggleMotoCalcMode('installment')" class="accent-amber-500">
+                                Parcela do Vendedor
+                            </label>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                            <div id="simMotoRateGroup">
+                                <label class="block text-xs font-bold text-slate-400 mb-1">Taxa de Juros Anual (%)</label>
+                                <input type="number" step="0.1" id="simMotoInterest" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="14.0" oninput="calculateMotoROI()">
+                            </div>
+                            <div id="simMotoInstallmentGroup" class="hidden">
+                                <label class="block text-xs font-bold text-amber-400 mb-1">Valor da Parcela (R$)</label>
+                                <input type="number" step="0.01" id="simMotoOfferedInst" class="w-full px-3 py-2 bg-slate-900 border border-amber-500/50 rounded-lg text-sm text-white font-bold" value="800" oninput="calculateMotoROI()">
+                            </div>
+                            
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[11px] text-slate-400 font-bold uppercase">Taxa Real Embutida</p>
+                                    <p id="simMotoCalculatedRateDisplay" class="text-sm font-black text-amber-400 mt-0.5">-- % a.m.</p>
+                                </div>
+                                <span id="simMotoRateBadge" class="text-[10px] font-bold px-2 py-1 rounded bg-slate-700 text-slate-300">Calculando...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Aluguel Semanal (R$)</label>
+                            <input type="number" id="simMotoRent" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="250" oninput="calculateMotoROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Reserva Manut. (%)</label>
+                            <input type="number" id="simMotoMaintPct" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="20" oninput="calculateMotoROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-blue-400 mb-1">Seguro Mensal (R$)</label>
+                            <input type="number" id="simMotoInsurance" class="w-full px-3 py-2 bg-slate-900 border border-blue-500/40 rounded-lg text-sm text-white" value="120" oninput="calculateMotoROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-indigo-400 mb-1">IPVA (% a.a.)</label>
+                            <input type="number" step="0.1" id="simMotoIPVALim" class="w-full px-3 py-2 bg-slate-900 border border-indigo-500/40 rounded-lg text-sm text-white" value="2.0" oninput="calcularIPVAPeloPercentual('moto')">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-indigo-400 mb-1">IPVA Mensal (R$)</label>
+                            <input type="number" id="simMotoIPVA" class="w-full px-3 py-2 bg-slate-900 border border-indigo-500/40 rounded-lg text-sm text-white" value="50" oninput="calculateMotoROI()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">Revenda (R$)</label>
+                            <input type="number" id="simMotoResale" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="12000" oninput="calculateMotoROI()">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 sm:p-5 rounded-xl border border-emerald-500/30 space-y-4">
+                        <h4 class="font-bold text-emerald-400 text-sm flex items-center gap-2"><i data-lucide="repeat" class="w-4 h-4"></i> Análise de Autofinanciamento Operacional (Moto)</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Receita Mensal</p><p id="simMotoMonthlyRev" class="text-sm sm:text-base font-black text-emerald-400 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Manutenção (-)</p><p id="simMotoMonthlyMaint" class="text-sm sm:text-base font-black text-rose-400 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Seguro + IPVA (-)</p><p id="simMotoMonthlyFixedCosts" class="text-sm sm:text-base font-black text-rose-400 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Sobra Parcela</p><p id="simMotoMonthlyAvail" class="text-sm sm:text-base font-black text-blue-300 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Parcela (-)</p><p id="simMotoMonthlyInst" class="text-sm sm:text-base font-black text-amber-400 mt-1">R$ 0,00</p></div>
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase">Lucro / Mês</p><p id="simMotoMonthlyNetCash" class="text-sm sm:text-base font-black text-emerald-400 mt-1">R$ 0,00</p></div>
+                        </div>
+                        <div id="simMotoCoverageStatus" class="p-3 rounded-lg text-xs font-semibold"></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-700">
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><p class="text-xs font-bold text-slate-400 uppercase">Lucro Pós-Quitação (Livre)</p><p id="simMotoPostPayoffMonthly" class="text-base sm:text-lg font-black text-emerald-400 mt-1">R$ 0,00</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><p id="simMotoNetLabel" class="text-xs font-bold text-slate-400 uppercase">Resultado Acumulado (18M)</p><p id="simMotoNet" class="text-base sm:text-lg font-black text-blue-400 mt-1">R$ 0,00</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><p class="text-xs font-bold text-slate-400 uppercase">ROI com Entrada</p><p id="simMotoROIWithTotal" class="text-base sm:text-lg font-black text-indigo-400 mt-1">0%</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><p class="text-xs font-bold text-slate-400 uppercase">ROI s/ Entrada</p><p id="simMotoROI" class="text-base sm:text-lg font-black text-cyan-400 mt-1">0%</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-backup" class="tab-content hidden space-y-6">
+                <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm space-y-6 max-w-2xl mx-auto">
+                    <div>
+                        <h3 class="font-bold text-white text-base sm:text-lg flex items-center gap-2"><i data-lucide="database" class="w-5 h-5 text-blue-400"></i> Central de Backup & Planilhas</h3>
+                        <p class="text-xs text-slate-400 mt-1">Exporte dados en JSON ou Planilha (.csv).</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button onclick="exportarBackupJSON()" class="py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold shadow transition-all flex items-center justify-center gap-2"><i data-lucide="file-json" class="w-4 h-4"></i> Baixar Backup .JSON</button>
+                        <button onclick="exportarPlanilhaCSV()" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold shadow transition-all flex items-center justify-center gap-2"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Baixar Planilha .CSV</button>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 sm:p-5 rounded-xl border border-slate-700 space-y-3">
+                        <label class="block text-xs font-bold text-slate-300">Importar Arquivo (Planilha CSV ou .JSON)</label>
+                        <p class="text-[11px] text-slate-400">Cabeçalho CSV: <code class="text-blue-400">placa,modelo,ano,status,custo,receita,maint,tax</code></p>
+                        <input type="file" id="importFile" accept=".json, .csv" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-300 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500">
+                        <button onclick="importarArquivoGeral(event)" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow transition-all flex items-center justify-center gap-2"><i data-lucide="upload-cloud" class="w-4 h-4"></i> Processar e Validar Importação</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-dev" class="tab-content hidden space-y-6">
+                <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-amber-500/40 shadow-lg space-y-6">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-4 flex-wrap gap-3">
+                        <div>
+                            <h3 class="font-bold text-amber-400 text-base sm:text-lg flex items-center gap-2"><i data-lucide="terminal" class="w-5 h-5"></i> Painel de Desenvolvedor & Auditoria Global</h3>
+                            <p class="text-xs text-slate-400 mt-1">Ferramentas avançadas para credencial Master.</p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button onclick="forcarAtualizacaoFrotaMaster()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow transition-all flex items-center gap-1.5"><i data-lucide="refresh-ccw" class="w-4 h-4"></i> Forçar Reset (Restaurar do Código)</button>
+                            <button onclick="removerDuplicidadePerfisMaster()" class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg shadow transition-all flex items-center gap-1.5"><i data-lucide="git-merge" class="w-4 h-4"></i> Limpar Duplicidades</button>
+                            <button onclick="carregarAuditoriaClientes()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs rounded-lg shadow transition-all flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar</button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse min-w-[600px]">
+                            <thead>
+                                <tr class="bg-slate-900 text-slate-400 border-b border-slate-700 text-xs uppercase">
+                                    <th class="p-3">UID do Cliente</th>
+                                    <th class="p-3 text-center">Veículos</th>
+                                    <th class="p-3 text-right">Imobilizado</th>
+                                    <th class="p-3 text-right">Receita Bruta</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="devClientsTableBody" class="divide-y divide-slate-700/50 text-xs">
+                                <tr><td colspan="5" class="p-4 text-center text-slate-500">Clique em 'Atualizar' para carregar.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL DE VEÍCULO -->
+    <div class="modal hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4" id="vehicleModal">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white text-base sm:text-lg" id="modalTitle">Cadastrar Veículo</h3>
+                <button onclick="closeVehicleModal()" class="text-slate-400 hover:text-white font-bold text-lg p-1">✕</button>
+            </div>
+            <form id="vehicleForm" onsubmit="saveVehicle(event)" class="space-y-4">
+                <input type="hidden" id="vehId">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Placa (Ex: ABC1D23)</label>
+                        <input type="text" id="vehPlate" required placeholder="ABC1D23" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white uppercase font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Modelo / Versão</label>
+                        <input type="text" id="vehModel" required placeholder="Ex: Renault Logan 1.0" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Ano</label>
+                        <input type="number" id="vehYear" required placeholder="2022" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Status</label>
+                        <select id="vehStatus" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                            <option value="Locado">Locado</option>
+                            <option value="Uso Próprio">Uso Próprio / Uber</option>
+                            <option value="À Venda">À Venda</option>
+                            <option value="Vendido">Vendido</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Aquisição (R$)</label>
+                        <input type="number" step="0.01" id="vehCost" required class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Receita Acum. (R$)</label>
+                        <input type="number" step="0.01" id="vehRevenue" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">IPVA/Seguro (R$)</label>
+                        <input type="number" step="0.01" id="vehTax" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white" value="0">
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t border-slate-700">
+                    <button type="button" onclick="closeVehicleModal()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold shadow">Salvar Veículo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE CADASTRO/EDIÇÃO DE MOTORISTAS -->
+    <div class="modal hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4" id="driverModal">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white text-base sm:text-lg" id="driverModalTitle">Cadastrar Motorista</h3>
+                <button onclick="closeDriverModal()" class="text-slate-400 hover:text-white font-bold text-lg p-1">✕</button>
+            </div>
+            <form id="driverForm" onsubmit="saveDriver(event)" class="space-y-4">
+                <input type="hidden" id="drvId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Nome Completo</label>
+                    <input type="text" id="drvName" required placeholder="Ex: Carlos Silva" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">CPF</label>
+                        <input type="text" id="drvCpf" required placeholder="000.000.000-00" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Data de Nascimento</label>
+                        <input type="date" id="drvBirthDate" required class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Categoria da CNH</label>
+                        <select id="drvCnhCategory" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                            <option value="A">A (Moto)</option>
+                            <option value="B" selected>B (Carro)</option>
+                            <option value="AB">AB (Carro e Moto)</option>
+                            <option value="C">C (Caminhão)</option>
+                            <option value="D">D (Ônibus/Van)</option>
+                            <option value="E">E (Articulado)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Anexo Documento CNH / Outros</label>
+                        <input type="file" id="drvDocFile" accept=".pdf,image/*" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500">
+                    </div>
+                </div>
+                <div id="drvDocPreviewContainer" class="hidden p-3 bg-slate-900/60 rounded-lg border border-slate-700 text-xs flex justify-between items-center">
+                    <span class="text-slate-300 font-semibold truncate" id="drvDocFileName">Documento Anexado</span>
+                    <a id="drvDocDownloadLink" target="_blank" download="cnh_motorista" class="text-blue-400 font-bold hover:underline flex items-center gap-1"><i data-lucide="download" class="w-3.5 h-3.5"></i> Abrir / Baixar</a>
+                </div>
+                <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t border-slate-700">
+                    <button type="button" onclick="closeDriverModal()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold shadow">Salvar Motorista</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE DOCUMENTO DO VEÍCULO / LICENCIAMENTO -->
+    <div class="modal hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4" id="vehDocModal">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white text-base sm:text-lg">Cadastrar Documento / Licenciamento</h3>
+                <button onclick="closeVehDocModal()" class="text-slate-400 hover:text-white font-bold text-lg p-1">✕</button>
+            </div>
+            <form id="vehDocForm" onsubmit="saveVehDoc(event)" class="space-y-4">
+                <input type="hidden" id="vehDocPlate">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Nome do Documento / Título</label>
+                    <input type="text" id="vehDocTitle" required placeholder="Ex: CRLV / Licenciamento 2026" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Ano de Exercício do Documento</label>
+                    <input type="number" id="vehDocYear" required placeholder="2026" value="2026" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Arquivo Digital (PDF ou Imagem)</label>
+                    <input type="file" id="vehDocFile" required accept=".pdf,image/*" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500">
+                </div>
+                <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t border-slate-700">
+                    <button type="button" onclick="closeVehDocModal()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold shadow">Anexar Documento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZAR / EDITAR RECEITA -->
+    <div class="modal hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4" id="viewEditRevenueModal">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white text-base sm:text-lg flex items-center gap-2"><i data-lucide="edit-3" class="w-5 h-5 text-blue-400"></i> Editar Receita</h3>
+                <button onclick="closeViewEditRevenueModal()" class="text-slate-400 hover:text-white font-bold text-lg p-1">✕</button>
+            </div>
+            <form id="viewEditRevenueForm" onsubmit="saveEditedRevenue(event)" class="space-y-4">
+                <input type="hidden" id="editRevPlate">
+                <input type="hidden" id="editRevId">
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Data</label><input type="date" id="editRevDate" required class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white"></div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label>
+                    <select id="editRevCategory" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                        <option value="Locação Semanal">Locação Semanal</option>
+                        <option value="Corridas Uber / App">Corridas Uber / App</option>
+                        <option value="Venda do Veículo">Venda do Veículo</option>
+                        <option value="Outras Receitas">Outras Receitas</option>
+                    </select>
+                </div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label><input type="text" id="editRevDesc" required class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white"></div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Valor (R$)</label><input type="number" step="0.01" id="editRevValue" required class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white"></div>
+                <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t border-slate-700"><button type="button" onclick="closeViewEditRevenueModal()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-semibold">Fechar</button><button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold shadow">Salvar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL LANÇAMENTO DE RECEITAS -->
+    <div class="modal hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4" id="revenueModal">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white text-base sm:text-lg flex items-center gap-2"><i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i> Lançar Receita</h3>
+                <button onclick="closeRevenueModal()" class="text-slate-400 hover:text-white font-bold text-lg p-1">✕</button>
+            </div>
+            <form id="revenueForm" onsubmit="saveRevenue(event)" class="space-y-4">
+                <input type="hidden" id="revVehiclePlate">
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Data</label><input type="date" id="revDate" required class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white"></div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label>
+                    <select id="revCategory" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                        <option value="Locação Semanal">Locação Semanal</option>
+                        <option value="Corridas Uber / App">Corridas Uber / App</option>
+                        <option value="Venda do Veículo">Venda do Veículo</option>
+                        <option value="Outras Receitas">Outras Receitas</option>
+                    </select>
+                </div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label><input type="text" id="revDesc" required placeholder="Ex: Venda definitiva do Clio" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white"></div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Valor (R$)</label><input type="number" step="0.01" id="revValue" required placeholder="0.00" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white"></div>
+                <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t border-slate-700"><button type="button" onclick="closeRevenueModal()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-semibold">Cancelar</button><button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow">Confirmar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL MANUTENÇÃO / CUSTOS -->
+    <div class="modal hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4" id="maintModal">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white text-base sm:text-lg">Lançar Custo / Manutenção</h3>
+                <button onclick="closeMaintModal()" class="text-slate-400 hover:text-white font-bold text-lg p-1">✕</button>
+            </div>
+            <form id="maintForm" onsubmit="saveMaintenance(event)" class="space-y-4">
+                <input type="hidden" id="maintVehiclePlate">
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Data</label><input type="date" id="maintDate" required class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white"></div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label>
+                    <select id="maintCategory" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white">
+                        <option value="Preventiva">Preventiva (Revisão, Óleo)</option>
+                        <option value="Corretiva">Corretiva (Reparos mecânicos)</option>
+                        <option value="Desgaste por Uso">Desgaste por Uso (Pneus)</option>
+                        <option value="Seguro Veicular">Seguro Veicular</option>
+                        <option value="IPVA / Tributos">IPVA / Tributos</option>
+                    </select>
+                </div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label><input type="text" id="maintDesc" required placeholder="Ex: Troca de óleo" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white"></div>
+                <div><label class="block text-xs font-bold text-slate-400 mb-1">Valor (R$)</label><input type="number" step="0.01" id="maintValue" required placeholder="0.00" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white"></div>
+                <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t border-slate-700"><button type="button" onclick="closeMaintModal()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-semibold">Cancelar</button><button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-sm font-semibold shadow">Adicionar Custo</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE APLICAÇÃO E FIREBASE -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_-du1HSIxzGWzIJCtn-tns7ySSHb7-tg",
+            authDomain: "gest-ee9d7.firebaseapp.com",
+            databaseURL: "https://gest-ee9d7-default-rtdb.firebaseio.com",
+            projectId: "gest-ee9d7",
+            storageBucket: "gest-ee9d7.firebasestorage.app",
+            messagingSenderId: "964999818193",
+            appId: "1:964999818193:web:95e0d47d5168df308ecef0",
+            measurementId: "G-LQ4Y439S14"
+        };
+
+        const CURRENT_YEAR = new Date().getFullYear();
+
+        const FROTAS_BLINDADAS_POR_EMAIL = {
+            "liefield@gmail.com": [
+                { id: "1", plate: "PZU0A67", model: "VW Voyage 1.0", year: 2016, status: "Locado", cost: 41468.90, revenue: 37923.79, maint: 14784.40, tax: 0.00, documents: [ { id: "doc_1", title: "CRLV / Licenciamento 2026", year: 2026, fileData: "" } ], logs: [ { id: "maint_1_1", date: "15/03/2026", category: "Preventiva", desc: "Revisão geral & suspensão", value: 8400.00 }, { id: "maint_1_2", date: "20/07/2026", category: "Corretiva", desc: "Troca de embreagem e reparo elétrico", value: 6384.40 } ], revenueLogs: [ { id: "rev_1_1", date: "10/01/2026", category: "Locação Semanal", desc: "Pacote Semanalidade Jan/2026", value: 18923.79 }, { id: "rev_1_2", date: "15/05/2026", category: "Locação Semanal", desc: "Repasse Semanalidade Fev-Abr", value: 19000.00 } ] },
+                { id: "2", plate: "RVS7A61", model: "Renault Logan 1.0 Zen", year: 2022, status: "Uso Próprio", cost: 60500.00, revenue: 52362.50, maint: 7451.50, tax: 2527.50, documents: [ { id: "doc_2", title: "CRLV 2025", year: 2025, fileData: "" } ], logs: [ { id: "maint_2_1", date: "15/10/2026", category: "IPVA / Tributos", desc: "IPVA 2026", value: 2527.50 }, { id: "maint_2_2", date: "12/04/2026", category: "Preventiva", desc: "Troca de óleo e pastilhas", value: 7451.50 } ], revenueLogs: [ { id: "rev_2_1", date: "20/02/2026", category: "Corridas Uber / App", desc: "Faturamento App Q1", value: 26181.25 }, { id: "rev_2_2", date: "15/07/2026", category: "Corridas Uber / App", desc: "Faturamento App Q2", value: 26181.25 } ] },
+                { id: "3", plate: "KXA3E78", model: "Dodge Journey 2.7 V6", year: 2010, status: "À Venda", cost: 25744.00, revenue: 5200.00, maint: 14533.20, tax: 294.00, documents: [], logs: [ { id: "maint_1792605560715", date: "21/10/2026", category: "Corretiva", desc: "Manutenções efetuados por ocasião de sua aquisição", value: 13333.20 } ], revenueLogs: [] },
+                { id: "4", plate: "QWT2D20", model: "Chevrolet Onix QWT", year: 2018, status: "Locado", cost: 29772.00, revenue: 36000.00, maint: 7634.55, tax: 4538.89, documents: [], logs: [], revenueLogs: [] },
+                { id: "5", plate: "BBK4D16", model: "Chevrolet Onix BBK", year: 2020, status: "Locado", cost: 33376.00, revenue: 33900.00, maint: 5383.22, tax: 4277.00, documents: [], logs: [], revenueLogs: [] },
+                { id: "6", plate: "LQY4891", model: "Renault Clio 1.0", year: 2013, status: "À Venda", cost: 18451.49, revenue: 19600.00, maint: 925.00, tax: 0.00, documents: [], logs: [], revenueLogs: [] },
+                { id: "7", plate: "PPO8J67", model: "Chevrolet Prisma (ex-Cidney)", year: 2016, status: "Vendido", cost: 38259.50, revenue: 59950.00, maint: 7588.75, tax: 0.00, documents: [], logs: [], revenueLogs: [] }
+            ]
+        };
+
+        const MASTER_EMAIL = "liefield@gmail.com";
+        let currentUser = null;
+        let targetUid = null;
+        let fleet = [];
+        let drivers = [];
+        let auth = null;
+        let db = null;
+        let chartStatusInst = null;
+        let chartFinanceInst = null;
+        let currentActiveTab = 'dashboard';
+        let isRegisterMode = false;
+        let activeListenerRef = null;
+        let activeDriversListenerRef = null;
+
+        window.onload = async function() {
+            try {
+                if (typeof firebase === 'undefined') throw new Error("Não foi possível carregar os módulos do Firebase.");
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                
+                auth = firebase.auth();
+                db = firebase.database();
+
+                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        currentUser = user;
+                        targetUid = user.uid;
+                        document.getElementById('authOverlay').classList.add('hidden');
+                        document.getElementById('appContainer').classList.remove('hidden');
+                        document.getElementById('userEmailDisplay').innerText = user.email;
+
+                        const masterPanel = document.getElementById('masterAdminPanel');
+                        if (user.email.toLowerCase() === MASTER_EMAIL.toLowerCase()) {
+                            masterPanel.classList.remove('hidden');
+                            carregarListaUidsMaster();
+                        } else { masterPanel.classList.add('hidden'); }
+
+                        initRealtimeSync(targetUid);
+                        initDriversSync(targetUid);
+                    } else {
+                        currentUser = null;
+                        targetUid = null;
+                        document.getElementById('authOverlay').classList.remove('hidden');
+                        document.getElementById('appContainer').classList.add('hidden');
+                    }
+                });
+            } catch (err) {
+                console.error("Erro crítico de inicialização:", err);
+                showAuthError(err.message || "Falha ao inicializar serviços de segurança.");
+            }
+        };
+
+        function showAuthError(msg) {
+            document.getElementById('authSuccessMsg').classList.add('hidden');
+            document.getElementById('authErrorMsg').innerText = msg;
+            document.getElementById('authErrorMsg').classList.remove('hidden');
+        }
+
+        function showAuthSuccess(msg) {
+            document.getElementById('authErrorMsg').classList.add('hidden');
+            document.getElementById('authSuccessMsg').innerText = msg;
+            document.getElementById('authSuccessMsg').classList.remove('hidden');
+        }
+
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            const titleEl = document.getElementById('authModalTitle');
+            const subEl = document.getElementById('authModalSubtitle');
+            const btnTextEl = document.getElementById('authBtnText');
+            const toggleTextEl = document.getElementById('authToggleText');
+            document.getElementById('authErrorMsg').classList.add('hidden');
+            document.getElementById('authSuccessMsg').classList.add('hidden');
+
+            if (isRegisterMode) {
+                titleEl.innerText = "Cadastrar Nova Conta";
+                subEl.innerText = "Criação de Credencial UID Segura";
+                btnTextEl.innerText = "Registrar Acesso";
+                toggleTextEl.innerHTML = `Já tem credencial? <button type="button" onclick="toggleAuthMode()" class="text-blue-400 hover:underline font-bold ml-1">Entrar no sistema</button>`;
+            } else {
+                titleEl.innerText = "Autenticação FleetManagerPro";
+                subEl.innerText = "Ambiente Criptografado UID";
+                btnTextEl.innerText = "Autenticar no Sistema";
+                toggleTextEl.innerHTML = `Ainda não possui credencial? <button type="button" onclick="toggleAuthMode()" class="text-blue-400 hover:underline font-bold ml-1">Solicitar Cadastro</button>`;
+            }
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value.trim();
+            const pass = document.getElementById('authPassword').value;
+            const submitBtn = document.getElementById('authSubmitBtn');
+            const btnText = document.getElementById('authBtnText');
+
+            document.getElementById('authErrorMsg').classList.add('hidden');
+            document.getElementById('authSuccessMsg').classList.add('hidden');
+            submitBtn.disabled = true;
+            btnText.innerText = "Processando...";
+
+            try {
+                if (isRegisterMode) {
+                    await auth.createUserWithEmailAndPassword(email, pass);
+                    alert("Conta criada com sucesso!");
+                } else {
+                    await auth.signInWithEmailAndPassword(email, pass);
+                }
+            } catch (err) {
+                let friendlyMsg = "Erro na autenticação. Verifique suas credenciais.";
+                switch (err.code) {
+                    case 'auth/wrong-password':
+                    case 'auth/invalid-credential': friendlyMsg = "Senha incorreta ou e-mail não cadastrado."; break;
+                    case 'auth/user-not-found': friendlyMsg = "Usuário não encontrado."; break;
+                    case 'auth/email-already-in-use': friendlyMsg = "Este e-mail já está em uso."; break;
+                    default: friendlyMsg = err.message || friendlyMsg;
+                }
+                showAuthError(friendlyMsg);
+            } finally {
+                submitBtn.disabled = false;
+                btnText.innerText = isRegisterMode ? "Registrar Acesso" : "Autenticar no Sistema";
+            }
+        }
+
+        async function handlePasswordReset() {
+            const email = document.getElementById('authEmail').value.trim();
+            if (!email) return showAuthError("Informe seu e-mail no campo acima para receber o link de redefinição de senha.");
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showAuthSuccess("E-mail de recuperação de senha enviado com sucesso! Verifique sua caixa de entrada.");
+            } catch (err) {
+                showAuthError("Erro ao solicitar redefinição: " + (err.message || "E-mail inválido"));
+            }
+        }
+
+        function logout() { auth.signOut().catch(err => console.error(err)); }
+
+        function carregarListaUidsMaster() {
+            if (!currentUser || currentUser.email.toLowerCase() !== MASTER_EMAIL.toLowerCase()) return;
+            db.ref('users_fleet').once('value').then(snapshot => {
+                const usersObj = snapshot.val() || {};
+                const select = document.getElementById('masterUserSelect');
+                select.innerHTML = `<option value="${currentUser.uid}">Meu Perfil Principal</option>`;
+                
+                Object.keys(usersObj).forEach(uidKey => {
+                    if(uidKey !== currentUser.uid) {
+                        select.innerHTML += `<option value="${uidKey}">Sócio: ${uidKey.substring(0, 8)}...</option>`;
+                    }
+                });
+                select.value = targetUid;
+            });
+        }
+
+        function switchMasterTargetUser(uid) {
+            if (!currentUser || currentUser.email.toLowerCase() !== MASTER_EMAIL.toLowerCase()) return;
+            targetUid = uid || currentUser.uid;
+            initRealtimeSync(targetUid);
+            initDriversSync(targetUid);
+        }
+
+        async function forcarAtualizacaoFrotaMaster() {
+            if (!currentUser) return;
+            const activeUid = targetUid || currentUser.uid;
+            const targetEmail = activeUid === currentUser.uid ? currentUser.email.toLowerCase() : null;
+            const frotaBlindada = FROTAS_BLINDADAS_POR_EMAIL[targetEmail] || FROTAS_BLINDADAS_POR_EMAIL[MASTER_EMAIL];
+
+            if (confirm("Isto reescreverá a frota deste usuário na nuvem usando os dados blindados no código-fonte. Deseja continuar?")) {
+                const updates = {};
+                frotaBlindada.forEach(car => { updates[car.id] = car; });
+                
+                await db.ref(`users_fleet/${activeUid}/_emptyFlag`).remove();
+                await db.ref(`users_fleet/${activeUid}`).set(updates);
+                localStorage.setItem(`fmp_backup_fleet_${activeUid}`, JSON.stringify(frotaBlindada));
+                alert("Frota atualizada e restaurada com sucesso!");
+            }
+        }
+
+        function initRealtimeSync(uid) {
+            if (activeListenerRef) activeListenerRef.off();
+            activeListenerRef = db.ref('users_fleet/' + uid);
+            activeListenerRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const userEmail = currentUser ? currentUser.email.toLowerCase() : '';
+                const blindagemDoCodigo = FROTAS_BLINDADAS_POR_EMAIL[userEmail];
+                
+                if (data && !data._emptyFlag) {
+                    fleet = Object.values(data).filter(item => item.id);
+                    fleet.forEach(car => {
+                        if (!car.revenueLogs) car.revenueLogs = [];
+                        if (!car.logs) car.logs = [];
+                        if (!car.documents) car.documents = [];
+                    });
+                    localStorage.setItem(`fmp_backup_fleet_${uid}`, JSON.stringify(fleet));
+                } else {
+                    const backupLocalInvisivel = localStorage.getItem(`fmp_backup_fleet_${uid}`);
+                    const intencionalmenteVazio = (data && data._emptyFlag);
+
+                    if (blindagemDoCodigo && uid === currentUser.uid && !intencionalmenteVazio) {
+                        const updates = {};
+                        blindagemDoCodigo.forEach(car => { updates[car.id] = car; });
+                        activeListenerRef.set(updates);
+                        fleet = [...blindagemDoCodigo];
+                    } else if (backupLocalInvisivel && !intencionalmenteVazio) {
+                        const parsedBackup = JSON.parse(backupLocalInvisivel);
+                        if (parsedBackup && parsedBackup.length > 0) {
+                            const updates = {};
+                            parsedBackup.forEach(car => { updates[car.id] = car; });
+                            activeListenerRef.set(updates);
+                            fleet = parsedBackup;
+                        } else {
+                            fleet = [];
+                        }
+                    } else {
+                        fleet = [];
+                    }
+                }
+                rebuildNavigationAndSections(currentActiveTab);
+                renderMaintenanceTable();
+                renderFleet();
+                updateDashboard();
+                lucide.createIcons();
+            });
+        }
+
+        function initDriversSync(uid) {
+            if (activeDriversListenerRef) activeDriversListenerRef.off();
+            activeDriversListenerRef = db.ref('users_drivers/' + uid);
+            activeDriversListenerRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                
+                if (data && !data._emptyFlag) {
+                    drivers = Object.values(data).filter(d => d.id);
+                    localStorage.setItem(`fmp_backup_drv_${uid}`, JSON.stringify(drivers));
+                } else {
+                    const backupLocalInvisivel = localStorage.getItem(`fmp_backup_drv_${uid}`);
+                    const intencionalmenteVazio = (data && data._emptyFlag);
+
+                    if (backupLocalInvisivel && !intencionalmenteVazio) {
+                        const parsedBackup = JSON.parse(backupLocalInvisivel);
+                        if (parsedBackup && parsedBackup.length > 0) {
+                            const updates = {};
+                            parsedBackup.forEach(drv => { updates[drv.id] = drv; });
+                            activeDriversListenerRef.set(updates);
+                            drivers = parsedBackup;
+                        } else { drivers = []; }
+                    } else {
+                        drivers = [];
+                    }
+                }
+                renderDrivers();
+                lucide.createIcons();
+            });
+        }
+
+        function carregarAuditoriaClientes() {
+            if (!currentUser || currentUser.email.toLowerCase() !== MASTER_EMAIL.toLowerCase()) return;
+            db.ref('users_fleet').once('value').then(snapshot => {
+                const allUsersData = snapshot.val() || {};
+                const tbody = document.getElementById('devClientsTableBody');
+                tbody.innerHTML = '';
+                const uids = Object.keys(allUsersData);
+                if (uids.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Nenhum cliente.</td></tr>`;
+                    return;
+                }
+                uids.forEach(uid => {
+                    const clientCarsObj = allUsersData[uid] || {};
+                    const carsList = Object.values(clientCarsObj).filter(c => c.id);
+                    const totalVeiculos = carsList.length;
+                    const imobilizado = carsList.filter(c => c.status !== 'Vendido').reduce((acc, c) => acc + Number(c.cost || 0), 0);
+                    const receita = carsList.reduce((acc, c) => acc + Number(c.revenue || 0), 0);
+                    const isSelf = uid === currentUser.uid;
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-700/35 transition-colors">
+                            <td class="p-3 font-mono text-amber-300 font-bold">${escapeHTML(uid.substring(0,10))}... ${isSelf ? '<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-1 py-0.5 rounded ml-1">Principal</span>' : ''}</td>
+                            <td class="p-3 text-center font-bold text-white">${totalVeiculos}</td>
+                            <td class="p-3 text-right text-indigo-300">${formatCurr(imobilizado)}</td>
+                            <td class="p-3 text-right text-emerald-400 font-bold">${formatCurr(receita)}</td>
+                            <td class="p-3 text-center flex justify-center gap-1.5">
+                                <button onclick="switchMasterTargetUser('${escapeHTML(uid)}'); switchTab('dashboard');" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold">Ver</button>
+                                ${!isSelf ? `<button onclick="excluirPerfilCliente('${escapeHTML(uid)}')" class="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-semibold">Excluir</button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                });
+                lucide.createIcons();
+            });
+        }
+
+        async function excluirPerfilCliente(uid) {
+            if (!currentUser || currentUser.email.toLowerCase() !== MASTER_EMAIL.toLowerCase()) return;
+            if (uid === currentUser.uid) return alert("Não é possível excluir a conta ativa.");
+            if (confirm(`Excluir conta UID: ${uid}?`)) {
+                await db.ref(`users_fleet/${uid}`).remove();
+                await db.ref(`users_drivers/${uid}`).remove();
+                carregarAuditoriaClientes();
+                carregarListaUidsMaster();
+            }
+        }
+
+        async function removerDuplicidadePerfisMaster() {
+            if (!currentUser || currentUser.email.toLowerCase() !== MASTER_EMAIL.toLowerCase()) return;
+            if (confirm("Limpar duplicidades e manter perfil oficial?")) {
+                const snapshot = await db.ref('users_fleet').once('value');
+                const allUsers = snapshot.val() || {};
+                for (let uid of Object.keys(allUsers)) {
+                    if (uid !== currentUser.uid) {
+                        await db.ref(`users_fleet/${uid}`).remove();
+                        await db.ref(`users_drivers/${uid}`).remove();
+                    }
+                }
+                const updates = {};
+                FROTAS_BLINDADAS_POR_EMAIL[MASTER_EMAIL].forEach(car => { updates[car.id] = car; });
+                await db.ref(`users_fleet/${currentUser.uid}/_emptyFlag`).remove();
+                await db.ref(`users_fleet/${currentUser.uid}`).set(updates);
+                carregarAuditoriaClientes();
+                carregarListaUidsMaster();
+                switchMasterTargetUser(currentUser.uid);
+            }
+        }
+
+        function escapeHTML(str) {
+            return String(str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+
+        function normalizarPlaca(plate) {
+            if (!plate) return '';
+            const clean = plate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
+            const regexPlaca = /^([A-Z]{3}[0-9]{4}|[A-Z]{3}[0-9][A-Z][0-9]{2})$/;
+            return regexPlaca.test(clean) ? clean : null;
+        }
+
+        function formatCurr(val) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+        }
+
+        function convertFileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function getLicensingBadge(documents) {
+            if (!documents || documents.length === 0) {
+                return `<span class="px-2 py-1 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Sem CRLV ⚠️</span>`;
+            }
+            const hasCurrentYearDoc = documents.some(doc => Number(doc.year) === CURRENT_YEAR);
+            if (hasCurrentYearDoc) {
+                return `<span class="px-2 py-1 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">2026 OK ✅</span>`;
+            } else {
+                return `<span class="px-2 py-1 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pendente ⚠️</span>`;
+            }
+        }
+
+        function renderMaintenanceTable() {
+            const tbody = document.getElementById('maintenanceTableBody');
+            if(!tbody) return;
+            const preventivePlan = [
+                { km: "10.000 KM", group: "Revisão Básica 1", items: "Troca de óleo, filtro de óleo, filtro de ar, alinhamento.", cost: 470.00 },
+                { km: "20.000 KM", group: "Revisão Básica 2", items: "Troca de óleo, filtros, rodízio de pneus e freios.", cost: 520.00 },
+                { km: "30.000 KM", group: "Revisão Intermediária 1", items: "Velas, cabos, fluido de freio e pastilhas.", cost: 953.00 },
+                { km: "40.000 KM", group: "Revisão Completa 1", items: "Kit correia dentada e tensor, óleo de câmbio.", cost: 1150.00 },
+                { km: "80.000 KM", group: "Revisão Grande", items: "Correia completa, amortecedores e suspensão.", cost: 2350.00 },
+                { km: "100.000 KM", group: "Marco Centenário", items: "Bomba d'água, válvula termostática e pneus.", cost: 2100.00 }
+            ];
+            tbody.innerHTML = '';
+            preventivePlan.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-700/35 transition-colors">
+                        <td class="p-3 font-bold text-blue-400">${escapeHTML(p.km)}</td>
+                        <td class="p-3 font-semibold text-white">${escapeHTML(p.group)}</td>
+                        <td class="p-3 text-slate-300">${escapeHTML(p.items)}</td>
+                        <td class="p-3 text-right font-bold text-emerald-400">R$ ${p.cost.toFixed(2).replace('.', ',')}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function rebuildNavigationAndSections(activeTabId = 'dashboard') {
+            const navTabs = document.getElementById('navTabs');
+            const dynamicContainer = document.getElementById('dynamicVehicleSections');
+            if(!navTabs || !dynamicContainer) return;
+
+            let devTabHtml = '';
+            if (currentUser && currentUser.email.toLowerCase() === MASTER_EMAIL.toLowerCase()) {
+                devTabHtml = `<button onclick="switchTab('dev'); carregarAuditoriaClientes();" id="tab-dev" class="tab-btn flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-amber-400 hover:bg-slate-800 hover:text-amber-300 transition-all shrink-0"><i data-lucide="terminal" class="w-4 h-4"></i> Dev</button>`;
+            }
+
+            navTabs.innerHTML = `
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all shrink-0"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Visão Geral & DRE</button>
+                <button onclick="switchTab('veiculos')" id="tab-veiculos" class="tab-btn flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all shrink-0"><i data-lucide="car-front" class="w-4 h-4"></i> Frota</button>
+                <button onclick="switchTab('motoristas')" id="tab-motoristas" class="tab-btn flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all shrink-0"><i data-lucide="users" class="w-4 h-4"></i> Motoristas</button>
+            `;
+
+            dynamicContainer.innerHTML = '';
+
+            fleet.forEach(v => {
+                const tabKey = `veh_${v.plate}`;
+                navTabs.innerHTML += `
+                    <button onclick="switchTab('${tabKey}')" id="tab-${tabKey}" class="tab-btn flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all shrink-0"><i data-lucide="file-text" class="w-4 h-4"></i> ${escapeHTML(String(v.model || '').split(' ')[0])} ${escapeHTML(v.plate)}</button>
+                `;
+
+                dynamicContainer.innerHTML += `
+                    <section id="sec-${tabKey}" class="tab-content hidden space-y-6">
+                        <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 flex-wrap gap-3">
+                            <h3 class="font-bold text-white text-sm sm:text-base">Painel: ${escapeHTML(v.model)} (${escapeHTML(v.plate)})</h3>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <button onclick="openVehDocModal('${escapeHTML(v.plate)}')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1 transition-all"><i data-lucide="file-plus" class="w-3.5 h-3.5"></i> + Doc/CRLV</button>
+                                <button onclick="openRevenueModal('${escapeHTML(v.plate)}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1 transition-all"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i> + Receita</button>
+                                <button onclick="openMaintModal('${escapeHTML(v.plate)}')" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1 transition-all"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Custo</button>
+                                <button onclick="openVehicleModal('${escapeHTML(v.id)}')" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1 transition-all"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Editar</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5" id="cards_${tabKey}"></div>
+
+                        <!-- 💡 FERRAMENTA ROI INDIVIDUAL DO VEÍCULO -->
+                        <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-blue-500/30 shadow-sm space-y-3">
+                            <h4 class="font-bold text-blue-400 text-sm sm:text-base flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4"></i> Análise de Retorno Financeiro & ROI (Individual)</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs" id="roiBox_${tabKey}"></div>
+                        </div>
+
+                        <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-700 pb-3 flex-wrap gap-2">
+                                <div>
+                                    <h4 class="font-bold text-white text-sm sm:text-base flex items-center gap-2"><i data-lucide="file-check-2" class="w-4 h-4 text-indigo-400"></i> Documentação & Licenciamento</h4>
+                                    <p class="text-xs text-slate-400">Controle de CRLV e documentos digitais do carro.</p>
+                                </div>
+                                <div id="licensingBadge_${tabKey}"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="vehDocsList_${tabKey}"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm" id="dre_${tabKey}"></div>
+                            
+                            <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                                    <h4 class="font-bold text-emerald-400 text-sm flex items-center gap-1"><i data-lucide="arrow-down-left" class="w-4 h-4"></i> Entradas / Receitas</h4>
+                                    <button onclick="openRevenueModal('${escapeHTML(v.plate)}')" class="text-xs text-emerald-400 font-bold hover:underline">+ Adicionar</button>
+                                </div>
+                                <div class="max-h-80 overflow-y-auto space-y-2 pr-1" id="revLogs_${tabKey}"></div>
+                            </div>
+
+                            <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                                    <h4 class="font-bold text-rose-400 text-sm flex items-center gap-1"><i data-lucide="arrow-up-right" class="w-4 h-4"></i> Saídas / Custos</h4>
+                                    <button onclick="openMaintModal('${escapeHTML(v.plate)}')" class="text-xs text-rose-400 font-bold hover:underline">+ Adicionar</button>
+                                </div>
+                                <div class="max-h-80 overflow-y-auto space-y-2 pr-1" id="maintLogs_${tabKey}"></div>
+                            </div>
+                        </div>
+                    </section>
+                `;
+            });
+
+            navTabs.innerHTML += `
+                <button onclick="switchTab('maintenance')" id="tab-maintenance" class="tab-btn flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all shrink-0"><i data-lucide="wrench" class="w-4 h-4"></i> Manutenção</button>
+                <button onclick="switchTab('roi')" id="tab-roi" class="tab-btn flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all shrink-0"><i data-lucide="calculator" class="w-4 h-4"></i> ROI Carros</button>
+                <button onclick="switchTab('roi-motos')" id="tab-roi-motos" class="tab-btn flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all shrink-0"><i data-lucide="bike" class="w-4 h-4"></i> ROI Motos</button>
+                <button onclick="switchTab('backup')" id="tab-backup" class="tab-btn flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all shrink-0"><i data-lucide="database" class="w-4 h-4"></i> Backup</button>
+                ${devTabHtml}
+            `;
+            
+            fleet.forEach(v => renderVehicleDetailTab(`veh_${v.plate}`));
+
+            lucide.createIcons();
+            switchTab(activeTabId, false);
+        }
+
+        function switchTab(tabId, updateMemory = true) {
+            if(updateMemory) currentActiveTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab', 'bg-blue-600', 'text-white'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.add('text-slate-400'));
+            
+            const targetSec = document.getElementById(`sec-${tabId}`);
+            if(targetSec) targetSec.classList.remove('hidden');
+
+            const btn = document.getElementById(`tab-${tabId}`);
+            if(btn) { btn.classList.add('active-tab'); btn.classList.remove('text-slate-400'); }
+
+            if(tabId === 'dashboard') updateDashboard();
+            if(tabId === 'motoristas') renderDrivers();
+            if(tabId === 'maintenance') renderMaintenanceTable();
+            if(tabId === 'roi') calculateCarROI();
+            if(tabId === 'roi-motos') calculateMotoROI();
+            if(tabId.startsWith('veh_')) renderVehicleDetailTab(tabId);
+            lucide.createIcons();
+        }
+
+        function updateDashboard() {
+            const totalCars = fleet.length;
+            const activeCars = fleet.filter(c => c.status === 'Locado' || c.status === 'Uso Próprio').length;
+            
+            const totalCost = fleet.filter(c => c.status !== 'Vendido').reduce((acc, c) => acc + Number(c.cost || 0), 0);
+            const totalRev = fleet.reduce((acc, c) => acc + Number(c.revenue || 0), 0);
+            const totalMaint = fleet.reduce((acc, c) => acc + Number(c.maint || 0), 0);
+            const totalTax = fleet.reduce((acc, c) => acc + Number(c.tax || 0), 0);
+            const totalDeductions = totalMaint + totalTax;
+
+            const netResult = totalRev - totalDeductions;
+            const pctMaint = totalRev > 0 ? (totalMaint / totalRev) * 100 : 0;
+            const pctTax = totalRev > 0 ? (totalTax / totalRev) * 100 : 0;
+            const pctNet = totalRev > 0 ? (netResult / totalRev) * 100 : 0;
+
+            document.getElementById('dashTotalVeiculos').innerText = totalCars;
+            document.getElementById('dashAtivosSub').innerText = `${activeCars} Ativos`;
+            document.getElementById('dashCapitalImobilizado').innerText = formatCurr(totalCost);
+            document.getElementById('dashTotalReceitas').innerText = formatCurr(totalRev);
+            document.getElementById('dashTotalDeducoes').innerText = formatCurr(totalDeductions);
+
+            document.getElementById('dreTableRev').innerText = formatCurr(totalRev);
+            document.getElementById('dreTableMaint').innerText = formatCurr(totalMaint);
+            document.getElementById('drePctMaint').innerText = pctMaint.toFixed(1) + '%';
+            document.getElementById('dreTableTax').innerText = formatCurr(totalTax);
+            document.getElementById('drePctTax').innerText = pctTax.toFixed(1) + '%';
+            document.getElementById('dreTableNet').innerText = formatCurr(netResult);
+            document.getElementById('drePctNet').innerText = pctNet.toFixed(1) + '%';
+
+            renderCharts();
+        }
+
+        function renderFleet() {
+            const query = document.getElementById('searchFleet') ? document.getElementById('searchFleet').value.toLowerCase() : '';
+            const tbody = document.getElementById('fleetTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            fleet.filter(c => (c.model || '').toLowerCase().includes(query) || (c.plate || '').toLowerCase().includes(query))
+                .forEach(c => {
+                    const tax = Number(c.tax || 0);
+                    const maint = Number(c.maint || 0);
+                    const rev = Number(c.revenue || 0);
+                    const net = rev - maint - tax;
+
+                    let badgeClass = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                    if (c.status === 'Uso Próprio') badgeClass = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+                    if (c.status === 'À Venda') badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                    if (c.status === 'Vendido') badgeClass = 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-700/35 transition-colors">
+                            <td class="p-3"><span class="plate-tag">${escapeHTML(c.plate)}</span></td>
+                            <td class="p-3 font-semibold text-white">${escapeHTML(c.model)}</td>
+                            <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">${escapeHTML(c.status)}</span></td>
+                            <td class="p-3">${getLicensingBadge(c.documents)}</td>
+                            <td class="p-3 text-emerald-400 font-bold">${formatCurr(rev)}</td>
+                            <td class="p-3 text-rose-400">${formatCurr(maint)}</td>
+                            <td class="p-3 font-black ${net >= 0 ? 'text-blue-400' : 'text-rose-400'}">${formatCurr(net)}</td>
+                            <td class="p-3 text-center flex justify-center gap-1.5">
+                                <button onclick="openVehDocModal('${escapeHTML(c.plate)}')" class="p-1.5 bg-indigo-500/20 hover:bg-indigo-500/40 rounded text-indigo-400" title="Adicionar Documento/CRLV"><i data-lucide="file-plus" class="w-4 h-4"></i></button>
+                                <button onclick="openRevenueModal('${escapeHTML(c.plate)}')" class="p-1.5 bg-emerald-500/20 hover:bg-emerald-500/40 rounded text-emerald-400" title="Receita"><i data-lucide="trending-up" class="w-4 h-4"></i></button>
+                                <button onclick="openMaintModal('${escapeHTML(c.plate)}')" class="p-1.5 bg-rose-500/20 hover:bg-rose-500/40 rounded text-rose-400" title="Custo"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                <button onclick="openVehicleModal('${escapeHTML(c.id)}')" class="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-200" title="Editar"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                <button onclick="deleteVehicle('${escapeHTML(c.id)}')" class="p-1.5 bg-rose-500/20 hover:bg-rose-500/40 rounded text-rose-400" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            lucide.createIcons();
+        }
+
+        /* GESTÃO DE MOTORISTAS */
+        function renderDrivers() {
+            const query = document.getElementById('searchDriver') ? document.getElementById('searchDriver').value.toLowerCase() : '';
+            const tbody = document.getElementById('driversTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const filtered = drivers.filter(d => (d.name || '').toLowerCase().includes(query) || (d.cpf || '').includes(query));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nenhum motorista encontrado.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(d => {
+                const birthFormatted = d.birthDate ? d.birthDate.split('-').reverse().join('/') : '--';
+                const docBtn = d.docData ? `<a href="${d.docData}" target="_blank" download="cnh_${d.name.replace(/\s+/g, '_')}" class="px-2.5 py-1 bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 rounded text-xs font-bold flex items-center gap-1 inline-flex"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> Visualizar Doc</a>` : `<span class="text-slate-500 text-xs">Sem documento</span>`;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-700/35 transition-colors">
+                        <td class="p-3 font-semibold text-white">${escapeHTML(d.name)}</td>
+                        <td class="p-3 font-mono text-slate-300">${escapeHTML(d.cpf)}</td>
+                        <td class="p-3 text-slate-300">${birthFormatted}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 bg-slate-700 text-white font-bold rounded text-xs">Cat. ${escapeHTML(d.cnhCategory)}</span></td>
+                        <td class="p-3">${docBtn}</td>
+                        <td class="p-3 text-center flex justify-center gap-1.5">
+                            <button onclick="openDriverModal('${escapeHTML(d.id)}')" class="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-200" title="Editar Motorista"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="deleteDriver('${escapeHTML(d.id)}')" class="p-1.5 bg-rose-500/20 hover:bg-rose-500/40 rounded text-rose-400" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function openDriverModal(id = null) {
+            document.getElementById('driverForm').reset();
+            document.getElementById('drvId').value = '';
+            document.getElementById('drvDocPreviewContainer').classList.add('hidden');
+            document.getElementById('driverModalTitle').innerText = 'Cadastrar Motorista';
+
+            if (id) {
+                const d = drivers.find(item => item.id === id);
+                if (d) {
+                    document.getElementById('drvId').value = d.id;
+                    document.getElementById('drvName').value = d.name;
+                    document.getElementById('drvCpf').value = d.cpf;
+                    document.getElementById('drvBirthDate').value = d.birthDate;
+                    document.getElementById('drvCnhCategory').value = d.cnhCategory;
+                    
+                    if (d.docData) {
+                        document.getElementById('drvDocPreviewContainer').classList.remove('hidden');
+                        const downloadLink = document.getElementById('drvDocDownloadLink');
+                        downloadLink.href = d.docData;
+                        downloadLink.setAttribute('download', `cnh_${(d.name || 'motorista').replace(/\s+/g, '_')}`);
+                    }
+                    document.getElementById('driverModalTitle').innerText = 'Editar Motorista';
+                }
+            }
+            document.getElementById('driverModal').classList.remove('hidden');
+        }
+
+        function closeDriverModal() { document.getElementById('driverModal').classList.add('hidden'); }
+
+        async function saveDriver(e) {
+            e.preventDefault();
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return alert("Erro de autenticação.");
+
+            const id = document.getElementById('drvId').value || 'drv_' + Date.now();
+            const fileInput = document.getElementById('drvDocFile');
+            const existingDriver = drivers.find(item => item.id === id) || {};
+
+            let docBase64 = existingDriver.docData || "";
+            if (fileInput.files.length > 0) { docBase64 = await convertFileToBase64(fileInput.files[0]); }
+
+            const driverData = {
+                id: id,
+                name: document.getElementById('drvName').value.trim(),
+                cpf: document.getElementById('drvCpf').value.trim(),
+                birthDate: document.getElementById('drvBirthDate').value,
+                cnhCategory: document.getElementById('drvCnhCategory').value,
+                docData: docBase64
+            };
+
+            await db.ref(`users_drivers/${activeUid}/_emptyFlag`).remove();
+            await db.ref(`users_drivers/${activeUid}/${id}`).set(driverData);
+            closeDriverModal();
+        }
+
+        async function deleteDriver(id) {
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return;
+            if (confirm('Deseja remover este motorista?')) {
+                await db.ref(`users_drivers/${activeUid}/${id}`).remove();
+                if (drivers.length <= 1) {
+                    await db.ref(`users_drivers/${activeUid}/_emptyFlag`).set(true);
+                    localStorage.removeItem(`fmp_backup_drv_${activeUid}`);
+                }
+            }
+        }
+
+        /* GESTÃO DE DOCUMENTOS DE VEÍCULOS / LICENCIAMENTO */
+        function openVehDocModal(plate) {
+            document.getElementById('vehDocForm').reset();
+            document.getElementById('vehDocPlate').value = plate;
+            document.getElementById('vehDocYear').value = CURRENT_YEAR;
+            document.getElementById('vehDocModal').classList.remove('hidden');
+        }
+
+        function closeVehDocModal() { document.getElementById('vehDocModal').classList.add('hidden'); }
+
+        async function saveVehDoc(e) {
+            e.preventDefault();
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return alert("Erro de autenticação.");
+
+            const plate = document.getElementById('vehDocPlate').value;
+            const fileInput = document.getElementById('vehDocFile');
+            
+            if (!fileInput.files.length) return alert("Selecione um arquivo de documento.");
+
+            const fileData = await convertFileToBase64(fileInput.files[0]);
+            const car = fleet.find(item => item.plate === plate);
+
+            if (car) {
+                if (!car.documents) car.documents = [];
+                car.documents.push({
+                    id: 'doc_' + Date.now(),
+                    title: document.getElementById('vehDocTitle').value.trim(),
+                    year: parseInt(document.getElementById('vehDocYear').value) || CURRENT_YEAR,
+                    fileData: fileData
+                });
+
+                await db.ref(`users_fleet/${activeUid}/${car.id}`).set(car);
+                closeVehDocModal();
+                rebuildNavigationAndSections(`veh_${plate}`);
+            }
+        }
+
+        async function deleteVehDoc(plate, docId) {
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return;
+            if (confirm('Deseja excluir este documento?')) {
+                const car = fleet.find(item => item.plate === plate);
+                if (car && car.documents) {
+                    car.documents = car.documents.filter(d => d.id !== docId);
+                    await db.ref(`users_fleet/${activeUid}/${car.id}`).set(car);
+                    rebuildNavigationAndSections(`veh_${plate}`);
+                }
+            }
+        }
+
+        function renderVehicleDetailTab(tabKey) {
+            const plate = tabKey.replace('veh_', '');
+            const v = fleet.find(item => item.plate === plate);
+            if(!v) return;
+
+            const rev = Number(v.revenue || 0);
+            const maint = Number(v.maint || 0);
+            const tax = Number(v.tax || 0);
+            const net = rev - maint - tax;
+            const cost = Number(v.cost || 0);
+            const saldoPayback = cost - net;
+            
+            const roiPct = cost > 0 ? (net / cost) * 100 : 0;
+            const marginPct = rev > 0 ? (net / rev) * 100 : 0;
+
+            const cardsEl = document.getElementById(`cards_${tabKey}`);
+            if(cardsEl) {
+                cardsEl.innerHTML = `
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase">Placa</p><p class="text-base sm:text-xl font-black text-white mt-1"><span class="plate-tag">${escapeHTML(v.plate)}</span></p><p class="text-[10px] sm:text-xs text-slate-400 mt-1 truncate">${escapeHTML(v.model)}</p></div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase">Aquisição</p><p class="text-lg sm:text-2xl font-black text-white mt-1 truncate">${formatCurr(cost)}</p></div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase">Payback</p><p class="text-lg sm:text-2xl font-black ${saldoPayback <= 0 ? 'text-emerald-400' : 'text-amber-400'} mt-1 truncate">${saldoPayback <= 0 ? 'Quitado ✅' : formatCurr(saldoPayback)}</p></div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase">Líquido</p><p class="text-lg sm:text-2xl font-black text-blue-400 mt-1 truncate">${formatCurr(net)}</p></div>
+                `;
+            }
+
+            const roiBoxEl = document.getElementById(`roiBox_${tabKey}`);
+            if(roiBoxEl) {
+                roiBoxEl.innerHTML = `
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase text-[10px]">Retorno Líquido</p><p class="text-sm font-black ${net >= 0 ? 'text-emerald-400' : 'text-rose-400'} mt-1">${formatCurr(net)}</p></div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase text-[10px]">ROI s/ Aquisição</p><p class="text-sm font-black text-blue-400 mt-1">${roiPct.toFixed(1)}%</p></div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase text-[10px]">Margem Operacional</p><p class="text-sm font-black text-indigo-300 mt-1">${marginPct.toFixed(1)}%</p></div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700"><p class="text-slate-400 font-bold uppercase text-[10px]">Status do Investimento</p><p class="text-sm font-black ${saldoPayback <= 0 ? 'text-emerald-400' : 'text-amber-400'} mt-1">${saldoPayback <= 0 ? 'Totalmente Pago' : 'Em Retorno'}</p></div>
+                `;
+            }
+
+            const badgeContainer = document.getElementById(`licensingBadge_${tabKey}`);
+            if(badgeContainer) {
+                badgeContainer.innerHTML = getLicensingBadge(v.documents);
+            }
+
+            const docsCont = document.getElementById(`vehDocsList_${tabKey}`);
+            if(docsCont) {
+                if(!v.documents || v.documents.length === 0) {
+                    docsCont.innerHTML = `<div class="col-span-full p-4 bg-slate-900/40 rounded-lg text-center text-xs text-slate-500">Nenhum documento digital anexado a este veículo.</div>`;
+                } else {
+                    docsCont.innerHTML = '';
+                    v.documents.forEach(doc => {
+                        const isUpToDate = Number(doc.year) === CURRENT_YEAR;
+                        const docBtn = doc.fileData ? `<a href="${doc.fileData}" target="_blank" download="crlv_${v.plate}_${doc.year}" class="p-1.5 bg-blue-500/25 hover:bg-blue-500/40 text-blue-400 rounded flex items-center gap-1 text-xs font-bold" title="Abrir Documento"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir</a>` : `<span class="text-slate-500 text-xs">Sem arquivo</span>`;
+
+                        docsCont.innerHTML += `
+                            <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 text-xs flex justify-between items-center gap-2">
+                                <div class="overflow-hidden space-y-0.5">
+                                    <p class="text-white font-bold truncate">${escapeHTML(doc.title)}</p>
+                                    <p class="text-[11px] text-slate-400">Exercício: <span class="${isUpToDate ? 'text-emerald-400 font-bold' : 'text-amber-400'}">${doc.year}</span></p>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    ${docBtn}
+                                    <button onclick="deleteVehDoc('${v.plate}', '${doc.id}')" class="p-1.5 bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 rounded" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            const dreEl = document.getElementById(`dre_${tabKey}`);
+            if(dreEl) {
+                dreEl.innerHTML = `
+                    <h3 class="font-bold text-white mb-4 text-sm sm:text-base">DRE Operacional</h3>
+                    <table class="w-full text-xs sm:text-sm">
+                        <tr class="border-b border-slate-700"><td class="py-2 text-slate-400">Custo Inicial:</td><td class="py-2 text-right font-bold text-white">${formatCurr(cost)}</td></tr>
+                        <tr class="border-b border-slate-700"><td class="py-2 text-slate-400">Receitas:</td><td class="py-2 text-right font-bold text-emerald-400">${formatCurr(rev)}</td></tr>
+                        <tr class="border-b border-slate-700"><td class="py-2 text-slate-400">(-) Manutenção:</td><td class="py-2 text-right font-bold text-rose-400">${formatCurr(maint)}</td></tr>
+                        <tr class="border-b border-slate-700"><td class="py-2 text-slate-400">(-) IPVA/Taxas:</td><td class="py-2 text-right font-bold text-rose-400">${formatCurr(tax)}</td></tr>
+                        <tr class="border-b border-slate-700"><td class="py-3 font-bold text-white">(=) Resultado:</td><td class="py-3 text-right font-black text-blue-400 text-sm sm:text-base">${formatCurr(net)}</td></tr>
+                    </table>
+                `;
+            }
+
+            const revCont = document.getElementById(`revLogs_${tabKey}`);
+            if(revCont) {
+                if(!v.revenueLogs || v.revenueLogs.length === 0) {
+                    revCont.innerHTML = `<div class="p-4 bg-slate-900/40 rounded-lg text-center text-xs text-slate-500">Nenhuma receita registrada.</div>`;
+                } else {
+                    revCont.innerHTML = '';
+                    v.revenueLogs.forEach(l => {
+                        revCont.innerHTML += `
+                            <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/60 text-xs flex justify-between items-center gap-2">
+                                <div class="overflow-hidden space-y-0.5">
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-emerald-400 font-bold">${escapeHTML(l.date)}</span>
+                                        <span class="text-slate-300">(${escapeHTML(l.category)})</span>
+                                    </div>
+                                    <p class="text-slate-400 truncate">${escapeHTML(l.desc)}</p>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <span class="text-emerald-400 font-black">+${formatCurr(l.value)}</span>
+                                    <button onclick="openViewEditRevenueModal('${v.plate}', '${l.id}')" class="p-1 bg-blue-500/10 rounded text-blue-400"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                                    <button onclick="deleteRevenueLog('${v.plate}', '${l.id}')" class="p-1 bg-rose-500/10 rounded text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
+                            </div>`;
+                    });
+                }
+            }
+
+            const maintCont = document.getElementById(`maintLogs_${tabKey}`);
+            if(maintCont) {
+                if(!v.logs || v.logs.length === 0) {
+                    maintCont.innerHTML = `<div class="p-4 bg-slate-900/40 rounded-lg text-center text-xs text-slate-500">Nenhum custo registrado.</div>`;
+                } else {
+                    maintCont.innerHTML = '';
+                    v.logs.forEach(l => {
+                        maintCont.innerHTML += `
+                            <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/60 text-xs flex justify-between items-center gap-2">
+                                <div class="overflow-hidden space-y-0.5">
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-rose-400 font-bold">${escapeHTML(l.date)}</span>
+                                        <span class="text-slate-300">(${escapeHTML(l.category)})</span>
+                                    </div>
+                                    <p class="text-slate-400 truncate">${escapeHTML(l.desc)}</p>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <span class="text-rose-400 font-black">-${formatCurr(l.value)}</span>
+                                    <button onclick="deleteMaintenanceLog('${v.plate}', '${l.id}')" class="p-1 bg-rose-500/10 rounded text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
+                            </div>`;
+                    });
+                }
+            }
+
+            lucide.createIcons();
+        }
+
+        function openVehicleModal(id = null) {
+            document.getElementById('vehicleForm').reset();
+            document.getElementById('vehId').value = '';
+            document.getElementById('modalTitle').innerText = 'Cadastrar Veículo';
+
+            if (id) {
+                const v = fleet.find(item => item.id === id);
+                if (v) {
+                    document.getElementById('vehId').value = v.id;
+                    document.getElementById('vehPlate').value = v.plate;
+                    document.getElementById('vehModel').value = v.model;
+                    document.getElementById('vehYear').value = v.year;
+                    document.getElementById('vehStatus').value = v.status;
+                    document.getElementById('vehCost').value = v.cost || 0;
+                    document.getElementById('vehRevenue').value = v.revenue || 0;
+                    document.getElementById('vehTax').value = v.tax || 0;
+                    document.getElementById('modalTitle').innerText = 'Editar Veículo';
+                }
+            }
+            document.getElementById('vehicleModal').classList.remove('hidden');
+        }
+
+        function closeVehicleModal() { document.getElementById('vehicleModal').classList.add('hidden'); }
+
+        async function saveVehicle(e) {
+            e.preventDefault();
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return alert("Erro de autenticação.");
+
+            const id = document.getElementById('vehId').value;
+            const plate = normalizarPlaca(document.getElementById('vehPlate').value);
+
+            if (!plate) return alert('Placa inválida.');
+
+            const vehicleId = id || 'car_' + Date.now();
+            const existingCar = fleet.find(item => item.id === id) || {};
+
+            const vehicleData = {
+                id: vehicleId,
+                plate: plate,
+                model: document.getElementById('vehModel').value.trim(),
+                year: parseInt(document.getElementById('vehYear').value) || 2022,
+                status: document.getElementById('vehStatus').value,
+                cost: parseFloat(document.getElementById('vehCost').value) || 0,
+                revenue: parseFloat(document.getElementById('vehRevenue').value) || existingCar.revenue || 0,
+                maint: existingCar.maint || 0,
+                tax: parseFloat(document.getElementById('vehTax').value) || existingCar.tax || 0,
+                logs: existingCar.logs || [],
+                revenueLogs: existingCar.revenueLogs || [],
+                documents: existingCar.documents || []
+            };
+
+            await db.ref(`users_fleet/${activeUid}/_emptyFlag`).remove();
+            await db.ref(`users_fleet/${activeUid}/${vehicleId}`).set(vehicleData);
+            
+            const idx = fleet.findIndex(c => c.id === vehicleId);
+            if (idx !== -1) fleet[idx] = vehicleData; else fleet.push(vehicleData);
+            localStorage.setItem(`fmp_backup_fleet_${activeUid}`, JSON.stringify(fleet));
+
+            closeVehicleModal();
+            rebuildNavigationAndSections(`veh_${plate}`);
+            updateDashboard();
+        }
+
+        async function deleteVehicle(id) {
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return;
+            if (confirm('Deseja realmente remover este veículo?')) {
+                await db.ref(`users_fleet/${activeUid}/${id}`).remove();
+                fleet = fleet.filter(c => c.id !== id);
+                localStorage.setItem(`fmp_backup_fleet_${activeUid}`, JSON.stringify(fleet));
+
+                if (fleet.length === 0) {
+                    await db.ref(`users_fleet/${activeUid}/_emptyFlag`).set(true);
+                    localStorage.removeItem(`fmp_backup_fleet_${activeUid}`);
+                }
+                rebuildNavigationAndSections('veiculos');
+                updateDashboard();
+            }
+        }
+
+        function openMaintModal(plate) {
+            document.getElementById('maintForm').reset();
+            document.getElementById('maintVehiclePlate').value = plate;
+            document.getElementById('maintDate').valueAsDate = new Date();
+            document.getElementById('maintModal').classList.remove('hidden');
+        }
+        function closeMaintModal() { document.getElementById('maintModal').classList.add('hidden'); }
+
+        function openRevenueModal(plate) {
+            document.getElementById('revenueForm').reset();
+            document.getElementById('revVehiclePlate').value = plate;
+            document.getElementById('revDate').valueAsDate = new Date();
+            document.getElementById('revenueModal').classList.remove('hidden');
+        }
+        function closeRevenueModal() { document.getElementById('revenueModal').classList.add('hidden'); }
+
+        async function saveRevenue(e) {
+            e.preventDefault();
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return alert("Erro de autenticação.");
+
+            const plate = document.getElementById('revVehiclePlate').value;
+            const dateStr = document.getElementById('revDate').value;
+            const [y, m, d] = dateStr.split('-');
+            const val = parseFloat(document.getElementById('revValue').value) || 0;
+            const cat = document.getElementById('revCategory').value;
+
+            const car = fleet.find(item => item.plate === plate);
+            if(car) {
+                if(!car.revenueLogs) car.revenueLogs = [];
+                car.revenueLogs.push({ id: 'rev_' + Date.now(), date: `${d}/${m}/${y}`, category: cat, desc: document.getElementById('revDesc').value.trim(), value: val });
+                
+                car.revenue = car.revenueLogs.reduce((acc, curr) => acc + Number(curr.value || 0), 0);
+
+                if (cat === 'Venda do Veículo') {
+                    car.status = 'Vendido';
+                }
+
+                await db.ref(`users_fleet/${activeUid}/${car.id}`).set(car);
+                localStorage.setItem(`fmp_backup_fleet_${activeUid}`, JSON.stringify(fleet));
+
+                closeRevenueModal();
+                rebuildNavigationAndSections(`veh_${plate}`);
+                updateDashboard();
+            }
+        }
+
+        function openViewEditRevenueModal(plate, logId) {
+            const car = fleet.find(item => item.plate === plate);
+            if(!car || !car.revenueLogs) return;
+            const log = car.revenueLogs.find(l => l.id === logId);
+            if(!log) return;
+
+            document.getElementById('editRevPlate').value = plate;
+            document.getElementById('editRevId').value = log.id;
+            const parts = (log.date || '').split('/');
+            document.getElementById('editRevDate').value = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+            document.getElementById('editRevCategory').value = log.category || 'Locação Semanal';
+            document.getElementById('editRevDesc').value = log.desc || '';
+            document.getElementById('editRevValue').value = log.value || 0;
+            document.getElementById('viewEditRevenueModal').classList.remove('hidden');
+        }
+
+        function closeViewEditRevenueModal() { document.getElementById('viewEditRevenueModal').classList.add('hidden'); }
+
+        async function saveEditedRevenue(e) {
+            e.preventDefault();
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return alert("Erro de autenticação.");
+
+            const plate = document.getElementById('editRevPlate').value;
+            const logId = document.getElementById('editRevId').value;
+            const dateStr = document.getElementById('editRevDate').value;
+            const [y, m, d] = dateStr.split('-');
+            const newVal = parseFloat(document.getElementById('editRevValue').value) || 0;
+
+            const car = fleet.find(item => item.plate === plate);
+            if(car && car.revenueLogs) {
+                const logIndex = car.revenueLogs.findIndex(l => l.id === logId);
+                if(logIndex !== -1) {
+                    car.revenueLogs[logIndex].date = `${d}/${m}/${y}`;
+                    car.revenueLogs[logIndex].category = document.getElementById('editRevCategory').value;
+                    car.revenueLogs[logIndex].desc = document.getElementById('editRevDesc').value.trim();
+                    car.revenueLogs[logIndex].value = newVal;
+
+                    car.revenue = car.revenueLogs.reduce((acc, curr) => acc + Number(curr.value || 0), 0);
+
+                    await db.ref(`users_fleet/${activeUid}/${car.id}`).set(car);
+                    localStorage.setItem(`fmp_backup_fleet_${activeUid}`, JSON.stringify(fleet));
+
+                    closeViewEditRevenueModal();
+                    rebuildNavigationAndSections(`veh_${plate}`);
+                    updateDashboard();
+                }
+            }
+        }
+
+        async function deleteRevenueLog(plate, logId) {
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return;
+            if(confirm('Excluir esta receita?')) {
+                const car = fleet.find(item => item.plate === plate);
+                if(car && car.revenueLogs) {
+                    const idx = car.revenueLogs.findIndex(l => l.id === logId);
+                    if (idx !== -1) {
+                        car.revenueLogs.splice(idx, 1);
+                        
+                        car.revenue = car.revenueLogs.reduce((acc, curr) => acc + Number(curr.value || 0), 0);
+
+                        await db.ref(`users_fleet/${activeUid}/${car.id}`).set(car);
+                        localStorage.setItem(`fmp_backup_fleet_${activeUid}`, JSON.stringify(fleet));
+
+                        rebuildNavigationAndSections(`veh_${plate}`);
+                        updateDashboard();
+                    }
+                }
+            }
+        }
+
+        async function saveMaintenance(e) {
+            e.preventDefault();
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return alert("Erro de autenticação.");
+
+            const plate = document.getElementById('maintVehiclePlate').value;
+            const dateStr = document.getElementById('maintDate').value;
+            const [y, m, d] = dateStr.split('-');
+            const val = parseFloat(document.getElementById('maintValue').value) || 0;
+            const cat = document.getElementById('maintCategory').value;
+
+            const car = fleet.find(item => item.plate === plate);
+            if(car) {
+                if(!car.logs) car.logs = [];
+                car.logs.push({ id: 'maint_' + Date.now(), date: `${d}/${m}/${y}`, category: cat, desc: document.getElementById('maintDesc').value.trim(), value: val });
+                
+                car.maint = car.logs
+                    .filter(l => l.category !== 'IPVA / Tributos' && l.category !== 'Seguro Veicular')
+                    .reduce((acc, curr) => acc + Number(curr.value || 0), 0);
+
+                car.tax = car.logs
+                    .filter(l => l.category === 'IPVA / Tributos' || l.category === 'Seguro Veicular')
+                    .reduce((acc, curr) => acc + Number(curr.value || 0), 0);
+
+                await db.ref(`users_fleet/${activeUid}/${car.id}`).set(car);
+                localStorage.setItem(`fmp_backup_fleet_${activeUid}`, JSON.stringify(fleet));
+
+                closeMaintModal();
+                rebuildNavigationAndSections(`veh_${plate}`);
+                updateDashboard();
+            }
+        }
+
+        async function deleteMaintenanceLog(plate, logId) {
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return;
+            if(confirm('Excluir custo?')) {
+                const car = fleet.find(item => item.plate === plate);
+                if(car && car.logs) {
+                    const idx = car.logs.findIndex(l => l.id === logId);
+                    if (idx !== -1) {
+                        car.logs.splice(idx, 1);
+
+                        car.maint = car.logs
+                            .filter(l => l.category !== 'IPVA / Tributos' && l.category !== 'Seguro Veicular')
+                            .reduce((acc, curr) => acc + Number(curr.value || 0), 0);
+
+                        car.tax = car.logs
+                            .filter(l => l.category === 'IPVA / Tributos' || l.category === 'Seguro Veicular')
+                            .reduce((acc, curr) => acc + Number(curr.value || 0), 0);
+
+                        await db.ref(`users_fleet/${activeUid}/${car.id}`).set(car);
+                        localStorage.setItem(`fmp_backup_fleet_${activeUid}`, JSON.stringify(fleet));
+
+                        rebuildNavigationAndSections(`veh_${plate}`);
+                        updateDashboard();
+                    }
+                }
+            }
+        }
+
+        function renderCharts() {
+            const statusCounts = {};
+            fleet.forEach(c => statusCounts[c.status] = (statusCounts[c.status] || 0) + 1);
+
+            const canvasStatus = document.getElementById('chartStatus');
+            if (canvasStatus) {
+                if (chartStatusInst) chartStatusInst.destroy();
+                chartStatusInst = new Chart(canvasStatus, {
+                    type: 'doughnut',
+                    data: { labels: Object.keys(statusCounts), datasets: [{ data: Object.values(statusCounts), backgroundColor: ['#22c55e', '#38bdf8', '#eab308', '#ef4444'] }] },
+                    options: { plugins: { legend: { labels: { color: '#f8fafc', boxWidth: 12 } } }, maintainAspectRatio: false }
+                });
+            }
+
+            const canvasFinance = document.getElementById('chartFinance');
+            if (canvasFinance) {
+                if (chartFinanceInst) chartFinanceInst.destroy();
+                chartFinanceInst = new Chart(canvasFinance, {
+                    type: 'bar',
+                    data: {
+                        labels: fleet.map(c => c.plate),
+                        datasets: [{ label: 'Resultado Líquido (R$)', data: fleet.map(c => Number(c.revenue || 0) - Number(c.maint || 0) - Number(c.tax || 0)), backgroundColor: '#38bdf8' }]
+                    },
+                    options: { scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { labels: { color: '#f8fafc' } } }, maintainAspectRatio: false }
+                });
+            }
+        }
+
+        function toggleCarCalcMode(mode) {
+            document.getElementById('simCarRateGroup').classList.toggle('hidden', mode !== 'rate');
+            document.getElementById('simCarInstallmentGroup').classList.toggle('hidden', mode === 'rate');
+            calculateCarROI();
+        }
+
+        function toggleMotoCalcMode(mode) {
+            document.getElementById('simMotoRateGroup').classList.toggle('hidden', mode !== 'rate');
+            document.getElementById('simMotoInstallmentGroup').classList.toggle('hidden', mode === 'rate');
+            calculateMotoROI();
+        }
+
+        function calcularIPVAPeloPercentual(tipo) {
+            if (tipo === 'car') {
+                const total = parseFloat(document.getElementById('simCarTotal').value) || 0;
+                const pct = (parseFloat(document.getElementById('simCarIPVALim').value) || 0) / 100;
+                document.getElementById('simCarIPVA').value = ((total * pct) / 12).toFixed(2);
+                calculateCarROI();
+            } else if (tipo === 'moto') {
+                const total = parseFloat(document.getElementById('simMotoTotal').value) || 0;
+                const pct = (parseFloat(document.getElementById('simMotoIPVALim').value) || 0) / 100;
+                document.getElementById('simMotoIPVA').value = ((total * pct) / 12).toFixed(2);
+                calculateMotoROI();
+            }
+        }
+
+        function calculateImplicitMonthlyInterestRate(pv, pmt, n) {
+            if (n <= 0 || pmt <= 0 || pv <= 0) return 0;
+            let low = 0.00001;
+            let high = 1.0;
+            let r = 0.01;
+            for (let i = 0; i < 50; i++) {
+                r = (low + high) / 2;
+                let calcPmt = pv * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+                if (calcPmt > pmt) { high = r; } else { low = r; }
+            }
+            return r;
+        }
+
+        function calculateCarROI() {
+            const total = parseFloat(document.getElementById('simCarTotal').value) || 0;
+            const down = parseFloat(document.getElementById('simCarDownPayment').value) || 0;
+            const months = parseInt(document.getElementById('simCarMonths').value) || 24;
+            const calcMode = document.querySelector('input[name="carCalcMode"]:checked')?.value || 'rate';
+
+            const rentWeekly = parseFloat(document.getElementById('simCarRent').value) || 0;
+            const maintPct = (parseFloat(document.getElementById('simCarMaintPct').value) || 0) / 100;
+            const insuranceMonthly = parseFloat(document.getElementById('simCarInsurance').value) || 0;
+            const ipvaMonthly = parseFloat(document.getElementById('simCarIPVA').value) || 0;
+            const resale = parseFloat(document.getElementById('simCarResale').value) || 0;
+
+            const financedAmount = Math.max(0, total - down);
+            let monthlyInst = 0;
+            let monthlyRate = 0;
+
+            if (calcMode === 'rate') {
+                const annualRate = (parseFloat(document.getElementById('simCarInterest').value) || 0) / 100;
+                monthlyRate = annualRate / 12;
+                if (monthlyRate > 0 && months > 0) {
+                    monthlyInst = financedAmount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+                } else if (months > 0) { monthlyInst = financedAmount / months; }
+            } else {
+                monthlyInst = parseFloat(document.getElementById('simCarOfferedInst').value) || 0;
+                if (financedAmount > 0 && monthlyInst > 0 && months > 0) {
+                    monthlyRate = calculateImplicitMonthlyInterestRate(financedAmount, monthlyInst, months);
+                }
+            }
+
+            const monthlyRatePct = monthlyRate * 100;
+            const annualRatePct = (Math.pow(1 + monthlyRate, 12) - 1) * 100;
+
+            document.getElementById('simCarCalculatedRateDisplay').innerText = `${monthlyRatePct.toFixed(2)}% a.m. (${annualRatePct.toFixed(1)}% a.a.)`;
+            const badgeEl = document.getElementById('simCarRateBadge');
+
+            if (monthlyRatePct < 1.5) {
+                badgeEl.className = "text-[10px] font-bold px-2 py-1 rounded bg-emerald-500/20 text-emerald-400";
+                badgeEl.innerText = "Atrativa ✅";
+            } else if (monthlyRatePct <= 2.5) {
+                badgeEl.className = "text-[10px] font-bold px-2 py-1 rounded bg-amber-500/20 text-amber-400";
+                badgeEl.innerText = "Moderada ⚠️";
+            } else {
+                badgeEl.className = "text-[10px] font-bold px-2 py-1 rounded bg-rose-500/20 text-rose-400";
+                badgeEl.innerText = "Elevada 🚨";
+            }
+
+            const monthlyGrossRev = rentWeekly * 4.3333;
+            const monthlyMaintProv = monthlyGrossRev * maintPct;
+            const monthlyFixedCosts = insuranceMonthly + ipvaMonthly;
+            
+            const monthlyAvailForInst = monthlyGrossRev - monthlyMaintProv - monthlyFixedCosts;
+            const monthlyNetCashDuringFinancing = monthlyAvailForInst - monthlyInst;
+            const postPayoffMonthlyProfit = monthlyGrossRev - monthlyMaintProv - monthlyFixedCosts;
+
+            const grossRevPeriod = monthlyGrossRev * months;
+            const maintProvPeriod = grossRevPeriod * maintPct;
+            const fixedCostsPeriod = monthlyFixedCosts * months;
+            const totalFinancingPaidPeriod = months * monthlyInst;
+            
+            const netResultPeriod = grossRevPeriod - maintProvPeriod - fixedCostsPeriod - totalFinancingPaidPeriod + resale - down;
+            const roiPctOnDownPayment = down > 0 ? (netResultPeriod / down) * 100 : 0;
+            const roiPctOnTotalCost = total > 0 ? (netResultPeriod / total) * 100 : 0;
+
+            document.getElementById('simCarMonthlyRev').innerText = formatCurr(monthlyGrossRev);
+            document.getElementById('simCarMonthlyMaint').innerText = formatCurr(monthlyMaintProv);
+            document.getElementById('simCarMonthlyFixedCosts').innerText = formatCurr(monthlyFixedCosts);
+            document.getElementById('simCarMonthlyAvail').innerText = formatCurr(monthlyAvailForInst);
+            document.getElementById('simCarMonthlyInst').innerText = formatCurr(monthlyInst);
+            document.getElementById('simCarMonthlyNetCash').innerText = formatCurr(monthlyNetCashDuringFinancing);
+
+            const coverageEl = document.getElementById('simCarCoverageStatus');
+            if (monthlyNetCashDuringFinancing >= 0) {
+                coverageEl.className = "p-3 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+                coverageEl.innerHTML = `✅ <b>Sustentável!</b> Sobra <b>${formatCurr(monthlyNetCashDuringFinancing)}/mês</b> de caixa limpo.`;
+            } else {
+                coverageEl.className = "p-3 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30";
+                coverageEl.innerHTML = `⚠️ <b>Atenção:</b> Faltam <b>${formatCurr(Math.abs(monthlyNetCashDuringFinancing))}/mês</b> para cobrir a parcela.`;
+            }
+
+            document.getElementById('simCarPostPayoffMonthly').innerText = formatCurr(postPayoffMonthlyProfit);
+            document.getElementById('simCarNetLabel').innerText = `Resultado Acumulado (${months}M)`;
+            document.getElementById('simCarNet').innerText = formatCurr(netResultPeriod);
+            document.getElementById('simCarROIWithTotal').innerText = roiPctOnTotalCost.toFixed(1) + '%';
+            document.getElementById('simCarROI').innerText = roiPctOnDownPayment.toFixed(1) + '%';
+        }
+
+        function calculateMotoROI() {
+            const total = parseFloat(document.getElementById('simMotoTotal').value) || 0;
+            const down = parseFloat(document.getElementById('simMotoDownPayment').value) || 0;
+            const months = parseInt(document.getElementById('simMotoMonths').value) || 18;
+            const calcMode = document.querySelector('input[name="motoCalcMode"]:checked')?.value || 'rate';
+
+            const rentWeekly = parseFloat(document.getElementById('simMotoRent').value) || 0;
+            const maintPct = (parseFloat(document.getElementById('simMotoMaintPct').value) || 0) / 100;
+            const insuranceMonthly = parseFloat(document.getElementById('simMotoInsurance').value) || 0;
+            const ipvaMonthly = parseFloat(document.getElementById('simMotoIPVA').value) || 0;
+            const resale = parseFloat(document.getElementById('simMotoResale').value) || 0;
+
+            const financedAmount = Math.max(0, total - down);
+            let monthlyInst = 0;
+            let monthlyRate = 0;
+
+            if (calcMode === 'rate') {
+                const annualRate = (parseFloat(document.getElementById('simMotoInterest').value) || 0) / 100;
+                monthlyRate = annualRate / 12;
+                if (monthlyRate > 0 && months > 0) {
+                    monthlyInst = financedAmount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+                } else if (months > 0) { monthlyInst = financedAmount / months; }
+            } else {
+                monthlyInst = parseFloat(document.getElementById('simMotoOfferedInst').value) || 0;
+                if (financedAmount > 0 && monthlyInst > 0 && months > 0) {
+                    monthlyRate = calculateImplicitMonthlyInterestRate(financedAmount, monthlyInst, months);
+                }
+            }
+
+            const monthlyRatePct = monthlyRate * 100;
+            const annualRatePct = (Math.pow(1 + monthlyRate, 12) - 1) * 100;
+
+            document.getElementById('simMotoCalculatedRateDisplay').innerText = `${monthlyRatePct.toFixed(2)}% a.m. (${annualRatePct.toFixed(1)}% a.a.)`;
+            const badgeEl = document.getElementById('simMotoRateBadge');
+
+            if (monthlyRatePct < 1.5) {
+                badgeEl.className = "text-[10px] font-bold px-2 py-1 rounded bg-emerald-500/20 text-emerald-400";
+                badgeEl.innerText = "Atrativa ✅";
+            } else if (monthlyRatePct <= 2.5) {
+                badgeEl.className = "text-[10px] font-bold px-2 py-1 rounded bg-amber-500/20 text-amber-400";
+                badgeEl.innerText = "Moderada ⚠️";
+            } else {
+                badgeEl.className = "text-[10px] font-bold px-2 py-1 rounded bg-rose-500/20 text-rose-400";
+                badgeEl.innerText = "Elevada 🚨";
+            }
+
+            const monthlyGrossRev = rentWeekly * 4.3333;
+            const monthlyMaintProv = monthlyGrossRev * maintPct;
+            const monthlyFixedCosts = insuranceMonthly + ipvaMonthly;
+
+            const monthlyAvailForInst = monthlyGrossRev - monthlyMaintProv - monthlyFixedCosts;
+            const monthlyNetCashDuringFinancing = monthlyAvailForInst - monthlyInst;
+            const postPayoffMonthlyProfit = monthlyGrossRev - monthlyMaintProv - monthlyFixedCosts;
+
+            const grossRevPeriod = monthlyGrossRev * months;
+            const maintProvPeriod = grossRevPeriod * maintPct;
+            const fixedCostsPeriod = monthlyFixedCosts * months;
+            const totalFinancingPaidPeriod = months * monthlyInst;
+            
+            const netResultPeriod = grossRevPeriod - maintProvPeriod - fixedCostsPeriod - totalFinancingPaidPeriod + resale - down;
+            const roiPctOnDownPayment = down > 0 ? (netResultPeriod / down) * 100 : 0;
+            const roiPctOnTotalCost = total > 0 ? (netResultPeriod / total) * 100 : 0;
+
+            document.getElementById('simMotoMonthlyRev').innerText = formatCurr(monthlyGrossRev);
+            document.getElementById('simMotoMonthlyMaint').innerText = formatCurr(monthlyMaintProv);
+            document.getElementById('simMotoMonthlyFixedCosts').innerText = formatCurr(monthlyFixedCosts);
+            document.getElementById('simMotoMonthlyAvail').innerText = formatCurr(monthlyAvailForInst);
+            document.getElementById('simMotoMonthlyInst').innerText = formatCurr(monthlyInst);
+            document.getElementById('simMotoMonthlyNetCash').innerText = formatCurr(monthlyNetCashDuringFinancing);
+
+            const coverageEl = document.getElementById('simMotoCoverageStatus');
+            if (monthlyNetCashDuringFinancing >= 0) {
+                coverageEl.className = "p-3 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+                coverageEl.innerHTML = `✅ <b>Sustentável!</b> Sobra <b>${formatCurr(monthlyNetCashDuringFinancing)}/mês</b> de caixa limpo.`;
+            } else {
+                coverageEl.className = "p-3 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30";
+                coverageEl.innerHTML = `⚠️ <b>Atenção:</b> Faltam <b>${formatCurr(Math.abs(monthlyNetCashDuringFinancing))}/mês</b> para cobrir a parcela.`;
+            }
+
+            document.getElementById('simMotoPostPayoffMonthly').innerText = formatCurr(postPayoffMonthlyProfit);
+            document.getElementById('simMotoNetLabel').innerText = `Resultado Acumulado (${months}M)`;
+            document.getElementById('simMotoNet').innerText = formatCurr(netResultPeriod);
+            document.getElementById('simMotoROIWithTotal').innerText = roiPctOnTotalCost.toFixed(1) + '%';
+            document.getElementById('simMotoROI').innerText = roiPctOnDownPayment.toFixed(1) + '%';
+        }
+
+        function exportarBackupJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ fleet, drivers }, null, 2));
+            const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", `fleetmanagerpro_${targetUid || 'backup'}.json`);
+            document.body.appendChild(dl); dl.click(); dl.remove();
+        }
+
+        function exportarPlanilhaCSV() {
+            let csv = "placa,modelo,ano,status,custo,receita,maint,tax\n";
+            fleet.forEach(c => {
+                csv += `"${c.plate}","${c.model}",${c.year},"${c.status}",${c.cost},${c.revenue || 0},${c.maint || 0},${c.tax || 0}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const dl = document.createElement('a'); dl.setAttribute("href", url); dl.setAttribute("download", `frota_${targetUid || 'geral'}.csv`);
+            document.body.appendChild(dl); dl.click(); dl.remove();
+        }
+
+        function importarArquivoGeral(e) {
+            const activeUid = targetUid || (currentUser ? currentUser.uid : null);
+            if(!activeUid) return alert("Erro de autenticação.");
+
+            const fileInput = document.getElementById('importFile');
+            if (!fileInput.files.length) return alert('Selecione um arquivo .json ou .csv.');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function(event) {
+                try {
+                    const content = event.target.result;
+                    if (file.name.endsWith('.json')) {
+                        const imported = JSON.parse(content);
+                        const fleetData = imported.fleet || imported;
+                        const updates = {};
+                        fleetData.forEach((car, index) => {
+                            const plateNorm = normalizarPlaca(car.plate);
+                            if (!plateNorm) throw new Error(`Placa inválida: "${car.plate}"`);
+                            const carId = car.id || 'car_' + Date.now() + '_' + index;
+                            updates[carId] = {
+                                id: carId,
+                                plate: plateNorm,
+                                model: String(car.model).trim(),
+                                year: parseInt(car.year) || 2022,
+                                status: ['Locado', 'Uso Próprio', 'À Venda', 'Vendido'].includes(car.status) ? car.status : 'Locado',
+                                cost: parseFloat(car.cost) || 0,
+                                revenue: parseFloat(car.revenue) || 0,
+                                maint: parseFloat(car.maint) || 0,
+                                tax: parseFloat(car.tax) || 0,
+                                logs: Array.isArray(car.logs) ? car.logs : [],
+                                revenueLogs: Array.isArray(car.revenueLogs) ? car.revenueLogs : [],
+                                documents: Array.isArray(car.documents) ? car.documents : []
+                            };
+                        });
+                        
+                        await db.ref(`users_fleet/${activeUid}/_emptyFlag`).remove();
+                        await db.ref(`users_fleet/${activeUid}`).set(updates);
+
+                        if (imported.drivers && Array.isArray(imported.drivers)) {
+                            const drvUpdates = {};
+                            imported.drivers.forEach((drv, i) => {
+                                const drvId = drv.id || 'drv_' + Date.now() + '_' + i;
+                                drvUpdates[drvId] = drv;
+                            });
+                            await db.ref(`users_drivers/${activeUid}/_emptyFlag`).remove();
+                            await db.ref(`users_drivers/${activeUid}`).set(drvUpdates);
+                        }
+
+                        alert('Backup JSON importado!');
+                    } else if (file.name.endsWith('.csv')) {
+                        const lines = content.split('\n');
+                        const updates = {};
+                        for (let i = 1; i < lines.length; i++) {
+                            const line = lines[i].trim();
+                            if(!line) continue;
+                            const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/^"|"$/g, '').trim());
+                            if(cols.length >= 2 && cols[0]) {
+                                const plateNorm = normalizarPlaca(cols[0]);
+                                if (plateNorm) {
+                                    const carId = 'car_csv_' + i + '_' + Date.now();
+                                    updates[carId] = {
+                                        id: carId,
+                                        plate: plateNorm,
+                                        model: cols[1] || 'Veículo',
+                                        year: parseInt(cols[2]) || 2022,
+                                        status: cols[3] || 'Locado',
+                                        cost: parseFloat(cols[4]) || 0,
+                                        revenue: parseFloat(cols[5]) || 0,
+                                        maint: parseFloat(cols[6]) || 0,
+                                        tax: parseFloat(cols[7]) || 0,
+                                        logs: [], revenueLogs: [], documents: []
+                                    };
+                                }
+                            }
+                        }
+                        await db.ref(`users_fleet/${activeUid}/_emptyFlag`).remove();
+                        await db.ref(`users_fleet/${activeUid}`).set(updates);
+                        alert('Planilha CSV importada!');
+                    }
+                } catch (err) {
+                    alert("Falha na importação: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
